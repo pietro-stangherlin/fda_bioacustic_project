@@ -878,6 +878,9 @@ gabbiani_meanspec_fd_sd = lapply(levels(gabbiani$Cluster), function(i) {
 # ..joint plot ---------------
 par(mfrow = c(1,3))
 
+jpeg("results/prima_parte/images/f_mean_sd.jpeg",
+     width = 1000, height = 600)
+
 FunctionalMeanBandPlot(fd_means = falchi_meanspec_fd_mean,
                        fd_sds = falchi_meanspec_fd_sd,
                        my.main = "Medie Funzionali ± Sd Falchi",
@@ -916,6 +919,8 @@ FunctionalMeanBandPlot(fd_means = gabbiani_meanspec_fd_mean,
 
 par(mfrow = c(1,1))
 
+dev.off()
+
 
 # >>fPCA ---------------------------------------------------------
 
@@ -923,6 +928,10 @@ par(mfrow = c(1,1))
 falchi_pcf = pca.fd(falchi_meanspec_fd, nharm = 10)
 gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 10)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 10)
+
+
+jpeg("results/prima_parte/images/f_pca_explained_var.jpeg",
+     width = 1000, height = 600)
 
 par(mfrow = c(3, 1))
 plot(cumsum(falchi_pcf$varprop), type = "b",
@@ -932,7 +941,10 @@ plot(cumsum(gufi_pcf$varprop), type = "b",
 plot(cumsum(gabbiani_pcf$varprop), type = "b",
      pch = 16, main = "fPCA varianza spiegata cumulata Gabbiani")
 
+dev.off()
+
 par(mfrow = c(1, 1))
+
 
 # 3 components -> see mean +- eps*harmonic
 falchi_pcf = pca.fd(falchi_meanspec_fd, nharm = 3)
@@ -940,18 +952,25 @@ gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 3)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 3)
 
 
+jpeg("results/prima_parte/images/f_pca_harmonics.jpeg",
+     width = 1000, height = 600)
+
 par(mfrow = c(3, 3), mar = rep(0, 4) + 1)
 plot(falchi_pcf)
 plot(gufi_pcf)
 plot(gabbiani_pcf)
 par(mfrow = c(1, 1), mar = c(5.1, 4.1, 4.1, 2.1))
 
+dev.off()
 
 # 2 components -> see scores
 falchi_pcf = pca.fd(falchi_meanspec_fd, nharm = 2)
 gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 2)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 2)
 
+
+jpeg("results/prima_parte/images/f_pca_scores.jpeg",
+     width = 1000, height = 600)
 
 par(mfrow = c(3, 1))
 plot(falchi_pcf$scores, type = "p", col = falchi$Climate_zone, pch = 16,
@@ -968,6 +987,8 @@ legend("topright", legend = levels(gabbiani$Cluster), col = 1:4, pch = 16,
        bty = "n")
 
 par(mfrow = c(1, 1))
+
+dev.off()
 
 
 # >>f Clustering --------------------------------------
@@ -1018,9 +1039,9 @@ fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
                  my.betastderrlist = falchi_anova_model$beta_se$betastderrlist,
                  my.factor = falchi$Climate_zone,
                  my.name = "Falchi",
-                 save_path = NULL,
-                 my.width = 600,
-                 my.height = 350,
+                 save_path = "results/prima_parte/images/f_beta_falchi.jpeg",
+                 my.width = 1000,
+                 my.height = 600,
                  my.layout.matr = cbind(matrix(1, 2, 2),
                                         matrix(2:5, 2, 2)))
 
@@ -1068,9 +1089,9 @@ fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
                  my.betastderrlist = gufi_anova_model$beta_se$betastderrlist,
                  my.factor = gufi$Climate_zone,
                  my.name = "Gufi",
-                 save_path = NULL,
-                 my.width = 600,
-                 my.height = 350,
+                 save_path = "results/prima_parte/images/f_beta_gufi.jpeg",
+                 my.width = 1000,
+                 my.height = 600,
                  my.layout.matr = cbind(matrix(1, 2, 2),
                                         matrix(2:5, 2, 2)))
 
@@ -1118,9 +1139,9 @@ fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
                  my.betastderrlist = gabbiani_anova_model$beta_se$betastderrlist,
                  my.factor = gabbiani$Cluster,
                  my.name = "gabbiani",
-                 save_path = NULL,
-                 my.width = 600,
-                 my.height = 350,
+                 save_path = "results/prima_parte/images/f_beta_gabbiani.jpeg",
+                 my.width = 1000,
+                 my.height = 600,
                  my.layout.matr = cbind(matrix(1, 2, 2),
                                         matrix(2:5, 2, 2)))
 
@@ -1128,6 +1149,10 @@ fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
 
 #.. cv err ------
 par(mfrow = c(3, 1))
+
+
+jpeg("results/prima_parte/images/f_anova_cv_err.jpeg",
+     width = 1000, height = 600)
 
 plot(cv_fanova_res_falchi$lambda_grid,
      cv_fanova_res_falchi$cv_error,
@@ -1151,10 +1176,13 @@ plot(cv_fanova_res_gabbiani$lambda_grid,
      ylab = "err",
      main = "Errore integrato di Cv - Gabbiani")
 
+dev.off()
 
 # .. f test --------
 par(mfrow = c(3, 1))
 
+jpeg("results/prima_parte/images/f_anova_f_test.jpeg",
+     width = 1000, height = 600)
 
 # falchi
 plot(
@@ -1198,6 +1226,8 @@ plot(
 )
 lines(gabbiani_meanspec_freqs, perm_fanova_res_gabbiani$qF, lty = 3)
 abline(h = perm_fanova_res_gabbiani$qFmax, lwd = 2, col = 2)
+
+dev.off()
 
 
 par(mfrow = c(1, 1))
