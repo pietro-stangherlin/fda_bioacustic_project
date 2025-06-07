@@ -408,7 +408,7 @@ FunctionalMeanBandPlot = function(fd_means,
                                   my.height = 350){
   
   if(!is.null(save_path)){
-    jpeg(save_path,
+    png(save_path,
          width = my.width,
          height = my.height)
   }
@@ -466,7 +466,7 @@ fANOVABetaSdPlot = function(my.betaestlist,
   
   
   if(!is.null(save_path)){
-    jpeg(save_path,
+    png(save_path,
          width = my.width,
          height = my.height)
   }
@@ -516,6 +516,10 @@ fANOVABetaSdPlot = function(my.betaestlist,
   
   par(mfrow = c(1, 1))
 }
+
+# >> Constants ------------------------------------
+MY.WIDTH = 1500
+MY.HEIGHT = 1000
 
 # >>Regularize fit via GCV -------------------
 
@@ -876,10 +880,12 @@ gabbiani_meanspec_fd_sd = lapply(levels(gabbiani$Cluster), function(i) {
 
 
 # ..joint plot ---------------
-par(mfrow = c(1,3))
 
-jpeg("results/prima_parte/images/f_mean_sd.jpeg",
-     width = 1000, height = 600)
+
+png("results/prima_parte/images/f_mean_sd.png",
+     width = MY.WIDTH, height = MY.HEIGHT)
+
+par(mfrow = c(1,3))
 
 FunctionalMeanBandPlot(fd_means = falchi_meanspec_fd_mean,
                        fd_sds = falchi_meanspec_fd_sd,
@@ -930,8 +936,8 @@ gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 10)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 10)
 
 
-jpeg("results/prima_parte/images/f_pca_explained_var.jpeg",
-     width = 1000, height = 600)
+png("results/prima_parte/images/f_pca_explained_var.png",
+     width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3, 1))
 plot(cumsum(falchi_pcf$varprop), type = "b",
@@ -952,8 +958,8 @@ gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 3)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 3)
 
 
-jpeg("results/prima_parte/images/f_pca_harmonics.jpeg",
-     width = 1000, height = 600)
+png("results/prima_parte/images/f_pca_harmonics.png",
+     width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3, 3), mar = rep(0, 4) + 1)
 plot(falchi_pcf)
@@ -969,8 +975,8 @@ gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 2)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 2)
 
 
-jpeg("results/prima_parte/images/f_pca_scores.jpeg",
-     width = 1000, height = 600)
+png("results/prima_parte/images/f_pca_scores.png",
+     width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3, 1))
 plot(falchi_pcf$scores, type = "p", col = falchi$Climate_zone, pch = 16,
@@ -1039,7 +1045,7 @@ fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
                  my.betastderrlist = falchi_anova_model$beta_se$betastderrlist,
                  my.factor = falchi$Climate_zone,
                  my.name = "Falchi",
-                 save_path = "results/prima_parte/images/f_beta_falchi.jpeg",
+                 save_path = "results/prima_parte/images/f_beta_falchi.png",
                  my.width = 1000,
                  my.height = 600,
                  my.layout.matr = cbind(matrix(1, 2, 2),
@@ -1089,7 +1095,7 @@ fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
                  my.betastderrlist = gufi_anova_model$beta_se$betastderrlist,
                  my.factor = gufi$Climate_zone,
                  my.name = "Gufi",
-                 save_path = "results/prima_parte/images/f_beta_gufi.jpeg",
+                 save_path = "results/prima_parte/images/f_beta_gufi.png",
                  my.width = 1000,
                  my.height = 600,
                  my.layout.matr = cbind(matrix(1, 2, 2),
@@ -1139,7 +1145,7 @@ fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
                  my.betastderrlist = gabbiani_anova_model$beta_se$betastderrlist,
                  my.factor = gabbiani$Cluster,
                  my.name = "gabbiani",
-                 save_path = "results/prima_parte/images/f_beta_gabbiani.jpeg",
+                 save_path = "results/prima_parte/images/f_beta_gabbiani.png",
                  my.width = 1000,
                  my.height = 600,
                  my.layout.matr = cbind(matrix(1, 2, 2),
@@ -1151,7 +1157,7 @@ fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
 par(mfrow = c(3, 1))
 
 
-jpeg("results/prima_parte/images/f_anova_cv_err.jpeg",
+png("results/prima_parte/images/f_anova_cv_err.png",
      width = 1000, height = 600)
 
 plot(cv_fanova_res_falchi$lambda_grid,
@@ -1181,7 +1187,7 @@ dev.off()
 # .. f test --------
 par(mfrow = c(3, 1))
 
-jpeg("results/prima_parte/images/f_anova_f_test.jpeg",
+png("results/prima_parte/images/f_anova_f_test.png",
      width = 1000, height = 600)
 
 # falchi

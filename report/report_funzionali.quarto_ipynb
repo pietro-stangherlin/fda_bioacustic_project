@@ -1,0 +1,89 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "---\n",
+        "title: \"Report Progetto Dati Funzionali\"\n",
+        "author: \"Matteo Ceola, Paolo Magagnato, Marco Piccolo e Pietro Stangherlin\"\n",
+        "lang: it\n",
+        "format:\n",
+        "  pdf:\n",
+        "    documentclass: article\n",
+        "    toc: true\n",
+        "    number-sections: true\n",
+        "---\n",
+        "\n",
+        "\n",
+        "## Introduzione\n",
+        "\n",
+        "## Obbiettivi\n",
+        "\n",
+        "-   Analisi esplorative funzionali\n",
+        "\n",
+        "-   ANOVA funzionale: confronto tra spettri di frequenze per diverse specie di uccelli\n",
+        "\n",
+        "-   Modello funzione su funzione: si è interessati a valutare se esistano delle relazioni tra ciascun suono emesso ed il suono precedente\n",
+        "\n",
+        "## Dati\n",
+        "\n",
+        "I dati considerati sono presenti sul portale [xeno-canto](https://xeno-canto.org/). Per ogni audio è disponibile la specie di uccello e le coordinate geografiche del rilevamento.\n",
+        "\n",
+        "## Operazioni preventive\n",
+        "\n",
+        "-   Passaggio al dominio della frequenza tramite spettro medio\n",
+        "\n",
+        "-   Normalizzazione delle ampiezze\n",
+        "\n",
+        "### Rappresentazione funzionale\n",
+        "Lisciamento.\n",
+        "\n",
+        "## Medie funzionali\n",
+        "\n",
+        "![Medie Funzionali](..\\\\results\\\\prima_parte\\\\images\\\\f_mean_sd.jpeg){#f_mean_sd}\n",
+        "\n",
+        "## PCA funzionale\n",
+        "\n",
+        "![Varianza Spiegata Cumulata](..\\\\results\\\\prima_parte\\\\images\\\\f_pca_explained_var.jpeg){#f_pca_explained_var}\n",
+        "\n",
+        "![Varianza Spiegata Cumulata](..\\\\results\\\\prima_parte\\\\images\\\\f_pca_harmonics.jpeg){#f_pca_harmonics}\n"
+      ],
+      "id": "99ee7bee"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| fig-cap: \"Long caption\"\n",
+        "#| fig-scap: \"fig-scap\""
+      ],
+      "id": "ad24f388",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "![Varianza Spiegata Cumulata](..\\\\results\\\\prima_parte\\\\images\\\\f_pca_scores.jpeg){fig-scap = \"f_pca_scores\"}\n",
+        "\n",
+        "## ANOVA funzionale\n",
+        "\n",
+        "## Modello funzione su funzione\n",
+        "\n",
+        "## Conclusioni"
+      ],
+      "id": "941503da"
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}
