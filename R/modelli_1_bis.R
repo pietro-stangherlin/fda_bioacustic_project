@@ -5,14 +5,23 @@ library(soundgen)
 library(fda)
 library(plotly)
 library(tidyverse)
+library(quadprog)
 
 rm(list = ls())
 
+
+# >> Data Reading ---------------------------------
 # WARNING: maybe change the input name
 load("data/data_1.RData")
 
+# subsample gufi due to computational issues
+gufi_ids_exclude = read.table("data/gufi_ids_exclude.txt",
+                              header = T)
 
-# save(
+gufi_meanspec_amps = gufi_meanspec_amps[,-gufi_ids_exclude$x]
+gufi = gufi[-gufi_ids_exclude$x,]
+
+# sagufi_meanspec_amps# save(
 #   falchi,
 #   falchi_meanspec_amps,
 #   falchi_meanspec_freqs,
@@ -31,7 +40,48 @@ load("data/data_1.RData")
 #   file = "data_1_bis.RData"
 # )
 
-# GCV Smoothing functions --------------------------------
+
+# >> Constraint basis fit ------------------------------------
+
+
+# fit a single observation
+ConstraintSplinesFit = function(x_grid,
+                                y_vals, # vector
+                                basis, # fda object
+                                box_constraints = c(0,1),
+                                constraint_grid_npoints = 1000){ # to optimize eval the basis once
+  
+  # this for loss
+  B <- eval.basis(x_grid, basis)
+  
+  # this for constraint
+  x_range = range(x_grid)
+  constranint_x_grid = seq(x_range[1], x_range[2],
+                           length = constraint_grid_npoints)
+  
+  B_const <- eval.basis(constranint_x_grid, basis)
+  
+  # QP components
+  Dmat <- t(B) %*% B
+  dvec <- t(B) %*% y_vals
+  
+  # Constraints: B_check %*% coef <= 1 and >= 0
+  Amat <- t(rbind(-B_const, diag(1, ncol(B_const))))
+  
+  bvec <- c(- rep(box_constraints[2], nrow(B_const)),
+            rep(box_constraints[1], ncol(B_const)))
+  
+  # Solve QP
+  fit <- solve.QP(Dmat, dvec, Amat, bvec, meq = 0)
+  
+  
+  return(list("basis" = basis,
+              "coef" = fit$solution))
+  
+}
+
+
+# >> GCV Smoothing functions --------------------------------
 
 # find best number of non penalized basis according to gcv
 GCV_IntegerSmoothBasis <- function(
@@ -52,11 +102,11 @@ GCV_IntegerSmoothBasis <- function(
       nbasis = n_basis_seq[i]
     )
 
-    basis_gcv_vals[i] <- smooth.basis(
+    basis_gcv_vals[i] <- mean(smooth.basis(
       x_grid,
       response_matrix,
       bspl_base,
-    )$gcv
+    )$gcv)
   }
 
   return(list(
@@ -94,11 +144,11 @@ GCV_DifferentialSmoothBasis <- function(
       lambda = lambda_grid[i]
     )
 
-    basis_gcv_vals[i] <- smooth.basis(
+    basis_gcv_vals[i] <- mean(smooth.basis(
       argvals = x_grid,
       y = response_matrix,
       fdParobj = fdpar_obj
-    )$gcv
+    )$gcv)
   }
 
   return(list(
@@ -108,7 +158,7 @@ GCV_DifferentialSmoothBasis <- function(
   ))
 }
 
-# ANOVA functions -------------------------------------
+# >> ANOVA functions -------------------------------------
 
 
 # Funzione per scegliere lambda ottimo per basi di beta
@@ -394,7 +444,7 @@ PermutFANOVA = function(factor,
 }
 
 
-# Plotting Functions ---------------------------------
+# >> Plotting Functions ---------------------------------
 FunctionalMeanBandPlot = function(fd_means,
                                   fd_sds,
                                   my.main,
@@ -521,6 +571,137 @@ fANOVABetaSdPlot = function(my.betaestlist,
 MY.WIDTH = 1500
 MY.HEIGHT = 1000
 
+
+
+# >> Regularize fit via Constraint Splines -----------------------
+
+# ╭──────╮
+# │Falchi│------------------------------------
+# ╰──────╯
+
+
+basis <- create.bspline.basis(range(falchi_meanspec_freqs),80)
+B = eval.basis(falchi_meanspec_freqs, basis)
+
+temp_coef = ConstraintSplinesFit(x_grid = falchi_meanspec_freqs,
+                                 y_vals = falchi_meanspec_amps[,1],
+                                 basis = basis,
+                                 box_constraints = c(0,1))$coef
+
+x_fine <- seq(min(falchi_meanspec_freqs),
+              max(falchi_meanspec_freqs), length.out = 500)
+B_fine <- eval.basis(x_fine, basis)
+y_fine <- B_fine %*% temp_coef
+
+plot(x_fine, y_fine, col = 1,
+     type = "l",
+     ylim = c(0,1.1))
+
+max_y = max(y_fine)
+
+for(i in 2:NCOL(falchi_meanspec_amps)){
+  temp_coef = ConstraintSplinesFit(x_grid = falchi_meanspec_freqs,
+                                   y_vals = falchi_meanspec_amps[,i],
+                                   basis = basis,
+                                   box_constraints = c(0,1))$coef
+  
+  y_fine <- B_fine %*% temp_coef
+  max_y = max(c(max_y, y_fine))
+  
+  lines(x_fine, y_fine, col = i)
+}
+
+max_y
+abline(h = 1, lwd = 1)
+
+
+# ╭────╮
+# │Gufi│ ----------------------------------------------------------
+# ╰────╯
+
+basis <- create.bspline.basis(range(gufi_meanspec_freqs),110)
+B = eval.basis(gufi_meanspec_freqs, basis)
+
+temp_coef = ConstraintSplinesFit(x_grid = gufi_meanspec_freqs,
+                                 y_vals = gufi_meanspec_amps[,1],
+                                 basis = basis,
+                                 box_constraints = c(0,1))$coef
+
+
+x_fine <- seq(min(gufi_meanspec_freqs),
+              max(gufi_meanspec_freqs), length.out = 1000)
+B_fine <- eval.basis(x_fine, basis)
+
+
+y_fine <- B_fine %*% as.matrix(temp_coef)
+
+plot(x_fine, y_fine, col = 1,
+     type = "l",
+     ylim = c(0,1.1))
+
+max_y = max(y_fine)
+
+for(i in 2:NCOL(gufi_meanspec_amps)){
+  temp_coef = ConstraintSplinesFit(x_grid = gufi_meanspec_freqs,
+                                   y_vals = gufi_meanspec_amps[,i],
+                                   basis = basis,
+                                   box_constraints = c(0,1))$coef
+  
+  y_fine <- B_fine %*% temp_coef
+  max_y = max(c(max_y, y_fine))
+  
+  lines(x_fine, y_fine, col = i)
+}
+
+abline(h = 1, lwd = 2)
+
+max_y
+
+
+
+# ╭────────╮
+# │Gabbiani│ ------------------------------------------------------------------
+# ╰────────╯
+
+basis <- create.bspline.basis(range(gabbiani_meanspec_freqs),110)
+B = eval.basis(gabbiani_meanspec_freqs, basis)
+
+temp_coef = ConstraintSplinesFit(x_grid = gabbiani_meanspec_freqs,
+                                 y_vals = gabbiani_meanspec_amps[,1],
+                                 basis = basis,
+                                 box_constraints = c(0,1))$coef
+
+
+x_fine <- seq(min(gabbiani_meanspec_freqs),
+              max(gabbiani_meanspec_freqs), length.out = 1000)
+B_fine <- eval.basis(x_fine, basis)
+
+
+y_fine <- B_fine %*% as.matrix(temp_coef)
+
+plot(x_fine, y_fine, col = 1,
+     type = "l",
+     ylim = c(0,1.1))
+
+max_y = max(y_fine)
+
+for(i in 2:NCOL(gabbiani_meanspec_amps)){
+  temp_coef = ConstraintSplinesFit(x_grid = gabbiani_meanspec_freqs,
+                                   y_vals = gabbiani_meanspec_amps[,i],
+                                   basis = basis,
+                                   box_constraints = c(0,1))$coef
+  
+  y_fine <- B_fine %*% temp_coef
+  max_y = max(c(max_y, y_fine))
+  
+  lines(x_fine, y_fine, col = i)
+}
+
+abline(h = 1, lwd = 2)
+
+max_y
+
+
 # >>Regularize fit via GCV -------------------
 
 
@@ -530,13 +711,13 @@ MY.HEIGHT = 1000
 
 
 # Changing basis number
-n_basis_seq = seq(20, 120)
+n_basis_seq = seq(20, nrow(falchi_meanspec_amps) - 2)
 NORDER = 4
 rangeval_falchi <- range(falchi_meanspec_freqs)
 
 
 falchi_nbasis_gcv <- GCV_IntegerSmoothBasis(
-  n_basis_seq = 20:120,
+  n_basis_seq = 20:(nrow(falchi_meanspec_amps) - 2),
   basis_order = NORDER,
   basis_rangeval = range(falchi_meanspec_freqs),
   x_grid = falchi_meanspec_freqs,
@@ -563,7 +744,7 @@ falchi_meanspec_fd_int = smooth.basis(
 # Changing lambda penalty
 
 falchi_LD_gcv <- GCV_DifferentialSmoothBasis(
-  n_basis = 70,
+  n_basis = nrow(falchi_meanspec_amps),
   lambda_grid = 10^seq(-10, -5, length = 100),
   basis_order = NORDER,
   basis_rangeval = range(falchi_meanspec_freqs),
@@ -586,7 +767,7 @@ min(falchi_LD_gcv$gcv_vals)
 falchi_basis_max = create.bspline.basis(
   rangeval = range(falchi_meanspec_freqs),
   norder = NORDER,
-  nbasis = 70
+  nbasis = nrow(falchi_meanspec_amps)
 )
 
 
@@ -626,13 +807,13 @@ falchi_meanspec_fd = falchi_meanspec_fd_diff
 dim(gufi_meanspec_amps)
 
 # Changing basis number
-n_basis_seq = seq(20, 100)
+n_basis_seq = seq(20, nrow(gufi_meanspec_amps) - 2)
 NORDER = 4
 rangeval_gufi <- range(gufi_meanspec_freqs)
 
 
 gufi_nbasis_gcv <- GCV_IntegerSmoothBasis(
-  n_basis_seq = 20:120,
+  n_basis_seq = 20:(nrow(gufi_meanspec_amps) - 2),
   basis_order = NORDER,
   basis_rangeval = range(gufi_meanspec_freqs),
   x_grid = gufi_meanspec_freqs,
@@ -660,8 +841,8 @@ gufi_meanspec_fd_int = smooth.basis(
 # Changing lambda penalty
 
 gufi_LD_gcv <- GCV_DifferentialSmoothBasis(
-  n_basis = 90,
-  lambda_grid = 10^seq(-15, -7, length = 100),
+  n_basis = nrow(gufi_meanspec_amps),
+  lambda_grid = 10^seq(-10, -6, length = 100),
   basis_order = NORDER,
   basis_rangeval = range(gufi_meanspec_freqs),
   x_grid = gufi_meanspec_freqs,
@@ -679,7 +860,7 @@ min(gufi_LD_gcv$gcv_vals)
 gufi_basis_max = create.bspline.basis(
   rangeval = range(gufi_meanspec_freqs),
   norder = NORDER,
-  nbasis = 100
+  nbasis = row(gufi_meanspec_amps)
 )
 gufi_fdPar = fdPar(
   fdobj = gufi_basis_max,
@@ -709,13 +890,16 @@ gufi_meanspec_fd = gufi_meanspec_fd_diff
 
 dim(gabbiani_meanspec_amps)
 
-n_basis_seq = seq(20, 120)
+# test
+gabbiani_meanspec_amps = gabbiani_meanspec_amps[,which(gabbiani_meanspec_amps[1,] > 0.1)]
+
+n_basis_seq = seq(20, nrow(gabbiani_meanspec_amps) - 2)
 NORDER = 4
 rangeval_gabbiani <- range(gabbiani_meanspec_freqs)
 
 
 gabbiani_nbasis_gcv <- GCV_IntegerSmoothBasis(
-  n_basis_seq = 20:120,
+  n_basis_seq = 20:(nrow(gabbiani_meanspec_amps) - 2),
   basis_order = NORDER,
   basis_rangeval = range(gabbiani_meanspec_freqs),
   x_grid = gabbiani_meanspec_freqs,
@@ -742,8 +926,8 @@ gabbiani_meanspec_fd_int = smooth.basis(
 # Changing lambda penalty
 
 gabbiani_LD_gcv <- GCV_DifferentialSmoothBasis(
-  n_basis = 120,
-  lambda_grid = 10^seq(-10, -5, length = 100),
+  n_basis = (nrow(gabbiani_meanspec_amps)),
+  lambda_grid = 10^seq(-8, -6, length = 100),
   basis_order = NORDER,
   basis_rangeval = range(gabbiani_meanspec_freqs),
   x_grid = gabbiani_meanspec_freqs,
@@ -765,7 +949,7 @@ min(gabbiani_LD_gcv$gcv_vals)
 gabbiani_basis_max = create.bspline.basis(
   rangeval = range(gabbiani_meanspec_freqs),
   norder = NORDER,
-  nbasis = 120
+  nbasis = (nrow(gabbiani_meanspec_amps))
 )
 gabbiani_fdPar = fdPar(
   fdobj = gabbiani_basis_max,
@@ -1046,8 +1230,8 @@ fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
                  my.factor = falchi$Climate_zone,
                  my.name = "Falchi",
                  save_path = "results/prima_parte/images/f_beta_falchi.png",
-                 my.width = 1000,
-                 my.height = 600,
+                 my.width = MY.WIDTH,
+                 my.height = MY.HEIGHT,
                  my.layout.matr = cbind(matrix(1, 2, 2),
                                         matrix(2:5, 2, 2)))
 
@@ -1096,8 +1280,8 @@ fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
                  my.factor = gufi$Climate_zone,
                  my.name = "Gufi",
                  save_path = "results/prima_parte/images/f_beta_gufi.png",
-                 my.width = 1000,
-                 my.height = 600,
+                 my.width = MY.WIDTH,
+                 my.height = MY.HEIGHT,
                  my.layout.matr = cbind(matrix(1, 2, 2),
                                         matrix(2:5, 2, 2)))
 
@@ -1146,8 +1330,8 @@ fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
                  my.factor = gabbiani$Cluster,
                  my.name = "gabbiani",
                  save_path = "results/prima_parte/images/f_beta_gabbiani.png",
-                 my.width = 1000,
-                 my.height = 600,
+                 my.width = MY.WIDTH,
+                 my.height = MY.HEIGHT,
                  my.layout.matr = cbind(matrix(1, 2, 2),
                                         matrix(2:5, 2, 2)))
 
@@ -1158,7 +1342,7 @@ par(mfrow = c(3, 1))
 
 
 png("results/prima_parte/images/f_anova_cv_err.png",
-     width = 1000, height = 600)
+     width = MY.WIDTH, height = MY.HEIGHT)
 
 plot(cv_fanova_res_falchi$lambda_grid,
      cv_fanova_res_falchi$cv_error,
@@ -1188,7 +1372,7 @@ dev.off()
 par(mfrow = c(3, 1))
 
 png("results/prima_parte/images/f_anova_f_test.png",
-     width = 1000, height = 600)
+     width = MY.WIDTH, height = MY.HEIGHT)
 
 # falchi
 plot(
