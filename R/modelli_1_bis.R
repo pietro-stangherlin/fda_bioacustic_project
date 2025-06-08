@@ -21,7 +21,7 @@ gufi_ids_exclude = read.table("data/gufi_ids_exclude.txt",
 gufi_meanspec_amps = gufi_meanspec_amps[,-gufi_ids_exclude$x]
 gufi = gufi[-gufi_ids_exclude$x,]
 
-# sagufi_meanspec_amps# save(
+# save(
 #   falchi,
 #   falchi_meanspec_amps,
 #   falchi_meanspec_freqs,
@@ -105,21 +105,6 @@ ConstraintSplinesFitGeneral = function(y_vals, # vector
   
 }
 
-# Leave One Out Cross Validation for constraint Splines
-# on a single curve
-# (leave one point at a time)
-LOOCVConstraintSPlinesSingleCurve = function(y_vals, # vector
-                                            B_observed_y, # basis evaluated on observed y values
-                                            B_constraint, # basis evaluated on dense grid: used in constraint
-                                            Dmat, # quadratic penalty component
-                                            Amat, # constraint matrix,
-                                            bvec, # constraint vector
-                                            box_constraints = c(0,1)){
-  
-  dvec_all <- t(B_observed_y) %*% y_vals
-  
-}
-
 
 # Leave One Out Cross Validation for constraint Splines
 # varying basis number
@@ -189,7 +174,9 @@ LOOCVConstraintSplinesInt = function(x_grid,
     error_grid[b] = mean(temp_cols_error)
   }
   
-  return(error_grid)
+  return(list("basis_num_seq" = basis_num_seq,
+              "loocv_err" = error_grid,
+              "basis_min" = basis_num_seq[which.min(error_grid)]))
   
 }
 
@@ -225,7 +212,7 @@ LOOCVConstraintSplinesDiff = function(x_grid,
   fdPar_obj = fdPar(
     fdobj = basis,
     Lfdobj = int2Lfd(2),
-    lambda = 1
+    lambda = 1 # actual penalty is considered below
   )
   
   penmat <-smooth.basis(
@@ -286,7 +273,111 @@ LOOCVConstraintSplinesDiff = function(x_grid,
     error_grid[i] = mean(temp_cols_error)
   }
   
-  return(error_grid)
+  return(list("lambda_grid" = lambda_grid,
+              "loocv_err" = error_grid,
+              "lambda_min" = lambda_grid[which.min(error_grid)]))
+  
+}
+
+# return an fd object with constraint splines
+# (unpenalized)
+ToFdConstraintSplinesInt = function(x_grid,
+                                    y_matrix, # each column is an observation
+                                    basis_num, # integer
+                                    box_constraints = c(0,1),
+                                    constraint_grid_npoints = 1000){
+  
+  
+  basis <- create.bspline.basis(range(x_grid),basis_num)
+  B = eval.basis(x_grid, basis)
+  
+  # allocate, to fill
+  BasisCoefMatr = matrix(NA,
+                         nrow = basis_num,
+                         ncol = NCOL(y_matrix))
+  
+  
+  for(i in 1:NCOL(y_matrix)){
+    temp_coef = ConstraintSplinesFit(x_grid = x_grid,
+                                     y_vals = y_matrix[,i],
+                                     basis = basis,
+                                     box_constraints = c(0,1),
+                                     constraint_grid_npoints = constraint_grid_npoints)$coef
+    BasisCoefMatr[,i] = temp_coef
+    
+  }
+  
+  
+  return(fd(coef = BasisCoefMatr,
+            basisobj = basis,
+            fdnames = list("frequency" = x_grid,
+                           "reps" = rep("y", NCOL(y_matrix)),
+                           "values" = "Amplitude")))
+  
+  
+}
+
+# return an fd object with constraint splines
+# (integral squared second derivated penalized)
+ToFdConstraintSplinesDiff = function(x_grid,
+                                    y_matrix, # each column is an observation
+                                    basis_num, # integer
+                                    my.lambda,
+                                    box_constraints = c(0,1),
+                                    constraint_grid_npoints = 1000){
+  
+  
+  basis <- create.bspline.basis(range(x_grid),basis_num)
+  B = eval.basis(x_grid, basis)
+  
+  x_range = range(x_grid)
+  constranint_x_grid = seq(x_range[1], x_range[2],
+                           length = constraint_grid_npoints)
+  
+  B_const <- eval.basis(constranint_x_grid, basis)
+  
+  fdPar_obj = fdPar(
+    fdobj = basis,
+    Lfdobj = int2Lfd(2),
+    lambda = 1 # actual penalty is considered below
+  )
+  
+  penmat <-smooth.basis(
+    x_grid,
+    y_matrix,
+    fdPar_obj
+  )$penmat
+  
+  
+  Amat <- t(rbind(-B_const, diag(1, ncol(B_const))))
+  
+  bvec <- c(- rep(box_constraints[2], nrow(B_const)),
+            rep(box_constraints[1], ncol(B_const)))
+  
+  Dmat <- t(B) %*% B + my.lambda * penmat
+  
+  
+  # allocate, to fill
+  BasisCoefMatr = matrix(NA,
+                         nrow = basis_num,
+                         ncol = NCOL(y_matrix))
+  
+  
+  for(i in 1:NCOL(y_matrix)){
+  
+    dvec <- t(B) %*% y_matrix[,i]
+    
+    BasisCoefMatr[,i] <- solve.QP(Dmat, dvec, Amat, bvec, meq = 0)$solution
+    
+  }
+  
+  
+  return(fd(coef = BasisCoefMatr,
+            basisobj = basis,
+            fdnames = list("frequency" = x_grid,
+                           "reps" = rep("y", NCOL(y_matrix)),
+                           "values" = "Amplitude")))
+  
   
 }
 
@@ -769,175 +860,17 @@ fANOVABetaSdPlot = function(my.betaestlist,
 }
 
 # >> Constants ------------------------------------
+
+# if TRUE save RData, at the risk of override existing ones 
+DO_SAVE_RDATA = TRUE
+
+
+
+# save Plotting
 MY.WIDTH = 1500
 MY.HEIGHT = 1000
 
 
-
-# >> Regularize fit via Constraint Splines -----------------------
-
-# ╭──────╮
-# │Falchi│------------------------------------
-# ╰──────╯
-
-
-falchi_basis_seq = 20:50
-
-falchi_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = falchi_meanspec_freqs,
-                          y_matrix = falchi_meanspec_amps,
-                          basis_num_seq = falchi_basis_seq,
-                          box_constraints = c(0,1))
-
-plot(falchi_basis_seq, falchi_loocv_pen_int, type = "l")
-
-falchi_lambda_grid = 10^(seq(-6, -3, length = 20))
-
-falchi_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
-                                                 y_matrix = falchi_meanspec_amps,
-                                                 basis_num = 110, # increment
-                                                 lambda_grid = falchi_lambda_grid,
-                                                 box_constraints = c(0,1))
-
-
-plot(log(falchi_lambda_grid, base = 10), falchi_loocv_pen_diff,
-     type = "b", pch = 16)
-
-nbasis = 80
-
-basis <- create.bspline.basis(range(falchi_meanspec_freqs),nbasis)
-B = eval.basis(falchi_meanspec_freqs, basis)
-
-BasisCoefMatr = matrix(NA,
-                       nrow = nbasis,
-                       ncol = NCOL(falchi_meanspec_amps))
-
-
-temp_coef = ConstraintSplinesFit(x_grid = falchi_meanspec_freqs,
-                                 y_vals = falchi_meanspec_amps[,1],
-                                 basis = basis,
-                                 box_constraints = c(0,1))$coef
-
-BasisCoefMatr[,1] = temp_coef
-
-
-
-x_fine <- seq(min(falchi_meanspec_freqs),
-              max(falchi_meanspec_freqs), length.out = 500)
-B_fine <- eval.basis(x_fine, basis)
-y_fine <- B_fine %*% temp_coef
-
-plot(x_fine, y_fine, col = 1,
-     type = "l",
-     ylim = c(0,1.1))
-
-max_y = max(y_fine)
-
-for(i in 2:NCOL(falchi_meanspec_amps)){
-  temp_coef = ConstraintSplinesFit(x_grid = falchi_meanspec_freqs,
-                                   y_vals = falchi_meanspec_amps[,i],
-                                   basis = basis,
-                                   box_constraints = c(0,1))$coef
-  
-  
-  BasisCoefMatr[,i] = temp_coef
-  
-  y_fine <- B_fine %*% as.matrix(temp_coef)
-  max_y = max(c(max_y, y_fine))
-  
-  lines(x_fine, y_fine, col = i)
-}
-
-max_y
-abline(h = 1, lwd = 1)
-
-falchi_meanspec_fd = fd(coef = BasisCoefMatr,
-                        basisobj = basis)
-
-# ╭────╮
-# │Gufi│ ----------------------------------------------------------
-# ╰────╯
-
-basis <- create.bspline.basis(range(gufi_meanspec_freqs),110)
-B = eval.basis(gufi_meanspec_freqs, basis)
-
-temp_coef = ConstraintSplinesFit(x_grid = gufi_meanspec_freqs,
-                                 y_vals = gufi_meanspec_amps[,1],
-                                 basis = basis,
-                                 box_constraints = c(0,1))$coef
-
-
-x_fine <- seq(min(gufi_meanspec_freqs),
-              max(gufi_meanspec_freqs), length.out = 1000)
-B_fine <- eval.basis(x_fine, basis)
-
-
-y_fine <- B_fine %*% as.matrix(temp_coef)
-
-plot(x_fine, y_fine, col = 1,
-     type = "l",
-     ylim = c(0,1.1))
-
-max_y = max(y_fine)
-
-for(i in 2:NCOL(gufi_meanspec_amps)){
-  temp_coef = ConstraintSplinesFit(x_grid = gufi_meanspec_freqs,
-                                   y_vals = gufi_meanspec_amps[,i],
-                                   basis = basis,
-                                   box_constraints = c(0,1))$coef
-  
-  y_fine <- B_fine %*% temp_coef
-  max_y = max(c(max_y, y_fine))
-  
-  lines(x_fine, y_fine, col = i)
-}
-
-# abline(h = 1, lwd = 1)
-
-max_y
-
-
-
-# ╭────────╮
-# │Gabbiani│ ------------------------------------------------------------------
-# ╰────────╯
-
-basis <- create.bspline.basis(range(gabbiani_meanspec_freqs),110)
-B = eval.basis(gabbiani_meanspec_freqs, basis)
-
-temp_coef = ConstraintSplinesFit(x_grid = gabbiani_meanspec_freqs,
-                                 y_vals = gabbiani_meanspec_amps[,1],
-                                 basis = basis,
-                                 box_constraints = c(0,1))$coef
-
-
-x_fine <- seq(min(gabbiani_meanspec_freqs),
-              max(gabbiani_meanspec_freqs), length.out = 1000)
-B_fine <- eval.basis(x_fine, basis)
-
-
-y_fine <- B_fine %*% as.matrix(temp_coef)
-
-plot(x_fine, y_fine, col = 1,
-     type = "l",
-     ylim = c(0,1.1))
-
-max_y = max(y_fine)
-
-for(i in 2:NCOL(gabbiani_meanspec_amps)){
-  temp_coef = ConstraintSplinesFit(x_grid = gabbiani_meanspec_freqs,
-                                   y_vals = gabbiani_meanspec_amps[,i],
-                                   basis = basis,
-                                   box_constraints = c(0,1))$coef
-  
-  y_fine <- B_fine %*% temp_coef
-  max_y = max(c(max_y, y_fine))
-  
-  lines(x_fine, y_fine, col = i)
-}
-
-abline(h = 1, lwd = 2)
-
-max_y
 
 
 # >>Regularize fit via GCV -------------------
@@ -1213,6 +1146,150 @@ plot(gabbiani_meanspec_fd_diff, main = "Diff penalty") # border problem
 par(mfrow = c(1, 1))
 
 gabbiani_meanspec_fd = gabbiani_meanspec_fd_int
+
+
+# >> Regularize fit via Constraint Splines -----------------------
+
+# ╭──────╮
+# │Falchi│------------------------------------
+# ╰──────╯
+
+falchi_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = falchi_meanspec_freqs,
+                                                 y_matrix = falchi_meanspec_amps,
+                                                 basis_num_seq = 20:50,
+                                                 box_constraints = c(0,1))
+
+
+falchi_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
+                                                   y_matrix = falchi_meanspec_amps,
+                                                   basis_num = 110,
+                                                   lambda_grid = 10^(seq(-6, -3, length = 20)),
+                                                   box_constraints = c(0,1))
+
+falchi_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = falchi_meanspec_freqs,
+                                                      y_matrix = falchi_meanspec_amps,
+                                                      basis_num = falchi_loocv_pen_int$basis_min)
+
+falchi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
+                                                        y_matrix = falchi_meanspec_amps,
+                                                        basis_num = 110,
+                                                        my.lambda = falchi_loocv_pen_diff$lambda_min)
+par(mfrow = c(1,2))
+plot(falchi_loocv_pen_int$basis_num_seq,
+     falchi_loocv_pen_int$loocv_err, type = "b", pch = 16,
+     xlab = "n basis",
+     ylab = "LOOCV error")
+
+plot(log(falchi_loocv_pen_diff$lambda_grid, base = 10),
+     falchi_loocv_pen_diff$loocv_err, type = "b", pch = 16,
+     xlab = "log(lambda, base = 10)",
+     ylab = "LOOCV error")
+par(mfrow = c(1,1))
+
+
+par(mfrow = c(1,2))
+plot(falchi_meanspec_fd_con_int,
+     main = paste0("Falchi Constraint Splines - nbasis: ",
+                   falchi_loocv_pen_int$basis_min, collapse = ""))
+plot(falchi_meanspec_fd_con_diff,
+     main = paste0("Falchi Constraint Penalized Splines - log(lambda): ",
+                   round(log(falchi_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
+par(mfrow = c(1,1))
+
+
+
+# ╭────╮
+# │Gufi│ ----------------------------------------------------------
+# ╰────╯
+
+gufi_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = gufi_meanspec_freqs,
+                                                 y_matrix = gufi_meanspec_amps,
+                                                 basis_num_seq = 20:50,
+                                                 box_constraints = c(0,1))
+
+
+gufi_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = gufi_meanspec_freqs,
+                                                   y_matrix = gufi_meanspec_amps,
+                                                   basis_num = 110,
+                                                   lambda_grid = 10^(seq(-6, -3, length = 20)),
+                                                   box_constraints = c(0,1))
+
+gufi_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = gufi_meanspec_freqs,
+                                                      y_matrix = gufi_meanspec_amps,
+                                                      basis_num = gufi_loocv_pen_int$basis_min)
+
+gufi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = gufi_meanspec_freqs,
+                                                        y_matrix = gufi_meanspec_amps,
+                                                        basis_num = 110,
+                                                        my.lambda = gufi_loocv_pen_diff$lambda_min)
+par(mfrow = c(1,2))
+plot(gufi_loocv_pen_int$basis_num_seq,
+     gufi_loocv_pen_int$loocv_err, type = "b", pch = 16,
+     xlab = "n basis",
+     ylab = "LOOCV error")
+
+plot(log(gufi_loocv_pen_diff$lambda_grid, base = 10),
+     gufi_loocv_pen_diff$loocv_err, type = "b", pch = 16,
+     xlab = "log(lambda, base = 10)",
+     ylab = "LOOCV error")
+par(mfrow = c(1,1))
+
+
+par(mfrow = c(1,2))
+plot(gufi_meanspec_fd_con_int,
+     main = paste0("gufi Constraint Splines - nbasis: ",
+                   gufi_loocv_pen_int$basis_min, collapse = ""))
+plot(gufi_meanspec_fd_con_diff,
+     main = paste0("gufi Constraint Penalized Splines - log(lambda): ",
+                   round(log(gufi_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
+par(mfrow = c(1,1))
+
+
+# ╭────────╮
+# │Gabbiani│ ------------------------------------------------------------------
+# ╰────────╯
+
+gabbiani_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = gabbiani_meanspec_freqs,
+                                               y_matrix = gabbiani_meanspec_amps,
+                                               basis_num_seq = 20:50,
+                                               box_constraints = c(0,1))
+
+
+gabbiani_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = gabbiani_meanspec_freqs,
+                                                 y_matrix = gabbiani_meanspec_amps,
+                                                 basis_num = 110,
+                                                 lambda_grid = 10^(seq(-6, -3, length = 20)),
+                                                 box_constraints = c(0,1))
+
+gabbiani_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = gabbiani_meanspec_freqs,
+                                                    y_matrix = gabbiani_meanspec_amps,
+                                                    basis_num = gabbiani_loocv_pen_int$basis_min)
+
+gabbiani_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = gabbiani_meanspec_freqs,
+                                                      y_matrix = gabbiani_meanspec_amps,
+                                                      basis_num = 110,
+                                                      my.lambda = gabbiani_loocv_pen_diff$lambda_min)
+par(mfrow = c(1,2))
+plot(gabbiani_loocv_pen_int$basis_num_seq,
+     gabbiani_loocv_pen_int$loocv_err, type = "b", pch = 16,
+     xlab = "n basis",
+     ylab = "LOOCV error")
+
+plot(log(gabbiani_loocv_pen_diff$lambda_grid, base = 10),
+     gabbiani_loocv_pen_diff$loocv_err, type = "b", pch = 16,
+     xlab = "log(lambda, base = 10)",
+     ylab = "LOOCV error")
+par(mfrow = c(1,1))
+
+
+par(mfrow = c(1,2))
+plot(gabbiani_meanspec_fd_con_int,
+     main = paste0("gabbiani Constraint Splines - nbasis: ",
+                   gabbiani_loocv_pen_int$basis_min, collapse = ""))
+plot(gabbiani_meanspec_fd_con_diff,
+     main = paste0("gabbiani Constraint Penalized Splines - log(lambda): ",
+                   round(log(gabbiani_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
+par(mfrow = c(1,1))
 
 
 # >>f Means ---------------------------------
