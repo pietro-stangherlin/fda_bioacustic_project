@@ -102,7 +102,7 @@ kable(representation_selection_df)
 ```
 
 
-![Funzioni Gufi](..\\results\\prima_parte\\images\\gufi_fits_crit.png){#fig-gufi_fits_crit}
+![Rappresentazioni funzionali degli spettrogrammi medi dei suoni dei gufi](..\\results\\prima_parte\\images\\gufi_fits_crit.png){#fig-gufi_fits_crit}
 Esaminando \@fig-gufi_fits_crit si evidenziano diverse problematiche:
 
   - nel caso senza vincoli e con penalizzazione solo sul numero di basi (grafico in alto a sinistra) il criterio GCV seleziona un numero eccessivo di basi (vicino al massimo possibile) che induce dei gravi problemi di comportamento erratico agli estremi, una possible soluzione è selezionare manualmente il numero di basi osservando criticamente sia l'andamento dell'errore di GCV sia le funzioni risultanti.
@@ -119,19 +119,28 @@ Alla luce dei commenti fatti si è scelto di impiegare i coefficienti ottenuti t
 
 In @fig-f_mean_sd si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
 
-![Medie Funzionali](..\\results\\prima_parte\\images\\f_mean_sd.png){#fig-f_mean_sd}
+Per i falchi le medie e le deviazioni standard dei gruppi hot e temperate appaiono vicine nel ragne di frequenze tra 3khz e 4.5khz, mentre fuori da questo intervallo presentano differenze sia in media che in varianza, rimandendo comunque sempre sopra le curve del gruppo cold.
+
+Come per i falchi anche per i gufi le curve medie nei tre gruppi sembrano seguire un andamente comune, così come le deviazioni standard, qui le due curve più vicine sono invece quelle dei gruppi cold e temperate. Risalta il picco nei pressi dello zero, ciò potrebbe essere semplicemente un artefatto numerico.
+
+Nei gabbiani la curva media che di discosta dalle altre è quella relativa al gruppo delle Canarie che domina le altre curve alle frequenze basse, mentre per quelle più alta è sotto tutte le altre curve medie. Si nota inolte un picco nella funzione media e un doppio picco per la deviazione standard intorno ai 3.5 khz per il gruppo Centre.
+
+![Medie Funzionali degli spettrogrammi medi dei suoni degli animali per i diversi gruppi a cui è aggiunto e sottrato l'errore standard funzionale. Da sinistra verso destra falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_mean_sd.png){#fig-f_mean_sd}
 
 ## PCA funzionale
 
-![Varianza Spiegata Cumulata](..\\results\\prima_parte\\images\\f_pca_explained_var.png){#fig-f_pca_explained_var}
+Si effettua un'analisi delle componenti principali funzionali, sia per avere delle ulteriori informazioni descrittive sia per vedere se i punteggi di tali componenti individuano o meno dei cluster di osservazioni potenzialmente diversi da quelli scelti in questa sede.
 
-![Armoniche](..\\results\\prima_parte\\images\\f_pca_harmonics.png){#fig-f_pca_harmonics}
+Inizialmente si fissa un numero di armoniche pari a 10 (@fig-f_pca_explained_var), per i falchi le prime 3 componenti spiegano circa l'80% della varianza, per i gufi sono necessarie 4 componenti per spiegare circa l'80% della varianza, mentre per i gabbiani l'85% della varianza è spiegato dalle prime tre componenti.
 
+![Varianza spiegata cumulata per le prime 10 componenti funzionali principali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_pca_explained_var.png){#fig-f_pca_explained_var}
 
-![Punteggi](..\\results\\prima_parte\\images\\f_pca_scores.png){#fig-f_pca_scores}
+Focalizzandosi sulle prime tre armoniche (@fig-f_pca_harmonics) si può vedere che, per tutti gli animali, la prima armonica segue abbastanza la forma della media funzionale, la seconda presenta un andamento opposto alla media e la terza varia molto tra i diversi animali e non è di facile intepretazione.
 
+![Prime tre armoniche (da sinistra verso destra) con piccoli scostamenti dalla media relative alle componenti principali funzionali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_pca_harmonics.png){#fig-f_pca_harmonics}
+Considerando le prime due armoniche (ma un risultato analogo si ottiene anche con le prime tre) e rappresentando graficamente i punteggi (@fig-f_pca_scores) non si distingue nessun cluster di punti.
 
-Test @fig-f_pca_scores
+![Punteggi delle prime due armoniche relative alle componenti principali funzionali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_pca_scores.png){#fig-f_pca_scores}
 
 ## ANOVA funzionale
 

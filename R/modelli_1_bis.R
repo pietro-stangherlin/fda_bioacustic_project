@@ -21,6 +21,16 @@ gufi_ids_exclude = read.table("data/gufi_ids_exclude.txt",
 gufi_meanspec_amps = gufi_meanspec_amps[,-gufi_ids_exclude$x]
 gufi = gufi[-gufi_ids_exclude$x,]
 
+# remove the zero frequency peak since it doesn't help 
+# with the inference
+# the peaks are at the first position only
+
+gufi_meanspec_amps = gufi_meanspec_amps[-1,]
+gabbiani_meanspec_amps = gabbiani_meanspec_amps[-1,]
+
+gufi_meanspec_freqs = gufi_meanspec_freqs[-1]
+gabbiani_meanspec_freqs = gabbiani_meanspec_freqs[-1]
+
 # save(
 #   falchi,
 #   falchi_meanspec_amps,
@@ -868,8 +878,8 @@ DO_SAVE_RDATA = TRUE
 
 
 # save Plotting
-MY.WIDTH = 1500
-MY.HEIGHT = 1000
+MY.WIDTH = 2000
+MY.HEIGHT = 2000
 
 
 
