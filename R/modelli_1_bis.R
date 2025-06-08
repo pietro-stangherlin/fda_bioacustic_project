@@ -45,6 +45,9 @@ gufi = gufi[-gufi_ids_exclude$x,]
 
 
 # fit a single observation
+# return coeffiecients
+# constraint_grid_npoints ideally has to be high
+# to guarantee the constraint on a dense points grid
 ConstraintSplinesFit = function(x_grid,
                                 y_vals, # vector
                                 basis, # fda object
@@ -79,6 +82,216 @@ ConstraintSplinesFit = function(x_grid,
               "coef" = fit$solution))
   
 }
+
+
+# add linear differential operator penalty
+# second derivative
+# this accept just a basis expansion already evaluated on a grid
+
+ConstraintSplinesFitGeneral = function(y_vals, # vector
+                                B_observed_y, # basis evaluated on observed y values
+                                B_constraint, # basis evaluated on dense grid: used in constraint
+                                Dmat, # quadratic penalty component
+                                Amat, # constraint matrix,
+                                bvec){ # constraint vector
+  
+  dvec <- t(B_observed_y) %*% y_vals
+  
+  # Solve QP
+  fit <- solve.QP(Dmat, dvec, Amat, bvec, meq = 0)
+  
+  # return coef
+  return(fit$solution)
+  
+}
+
+# Leave One Out Cross Validation for constraint Splines
+# on a single curve
+# (leave one point at a time)
+LOOCVConstraintSPlinesSingleCurve = function(y_vals, # vector
+                                            B_observed_y, # basis evaluated on observed y values
+                                            B_constraint, # basis evaluated on dense grid: used in constraint
+                                            Dmat, # quadratic penalty component
+                                            Amat, # constraint matrix,
+                                            bvec, # constraint vector
+                                            box_constraints = c(0,1)){
+  
+  dvec_all <- t(B_observed_y) %*% y_vals
+  
+}
+
+
+# Leave One Out Cross Validation for constraint Splines
+# varying basis number
+LOOCVConstraintSplinesInt = function(x_grid,
+                                    y_matrix, # each column is an observation
+                                    basis_num_seq, # sequence of integers
+                                    box_constraints = c(0,1),
+                                    constraint_grid_npoints = 1000){
+  
+  error_grid = rep(NA, length(basis_num_seq))
+  
+  
+  for (b in 1:length(basis_num_seq)){
+    
+    
+    cat("nbasis: ")
+    cat(basis_num_seq[b])
+    cat("\n")
+    
+    # for each observation
+    # compute once quantities
+    
+    # this for loss
+    basis <- create.bspline.basis(range(x_grid),basis_num_seq[b])
+    B_temp_obs <- eval.basis(x_grid, basis)
+    
+    # this for constraint
+    x_range = range(x_grid)
+    constranint_x_grid = seq(x_range[1], x_range[2],
+                             length = constraint_grid_npoints)
+    
+    B_const <- eval.basis(constranint_x_grid, basis)
+    
+    
+    # Constraints: B_check %*% coef <= 1 and >= 0
+    Amat <- t(rbind(-B_const, diag(1, ncol(B_const))))
+    
+    bvec <- c(- rep(box_constraints[2], nrow(B_const)),
+              rep(box_constraints[1], ncol(B_const)))
+    
+    
+    temp_cols_error = rep(NA, NCOL(y_matrix))
+    
+    # for each column
+    for(colj in 1:NCOL(y_matrix)){
+      
+      temp_err = rep(NA, length(colj))
+      
+      # for each point
+      for(point_index in 1:length(colj)){
+        # QP components
+        Dmat <- t(B_temp_obs[-point_index,]) %*% B_temp_obs[-point_index,]
+        dvec <- t(B_temp_obs[-point_index,]) %*% y_matrix[-point_index,colj]
+        
+        temp_coef <- solve.QP(Dmat, dvec, Amat, bvec, meq = 0)$solution
+        
+        # prediction error
+        temp_err[point_index] = (y_matrix[point_index,colj] - 
+                                   B_const[point_index,] %*% temp_coef)^2
+        
+      }
+      
+      temp_cols_error[colj] = mean(temp_err)
+      
+    }
+    
+    error_grid[b] = mean(temp_cols_error)
+  }
+  
+  return(error_grid)
+  
+}
+
+
+# Leave One Out Cross Validation for constraint Splines
+# fixed basis number
+# using second derivative linear differential operator integral
+# penalty, on a lambda grid
+LOOCVConstraintSplinesDiff = function(x_grid,
+                                     y_matrix, # each column is an observation
+                                     basis_num, # integer
+                                     lambda_grid,
+                                     box_constraints = c(0,1),
+                                     constraint_grid_npoints = 1000){
+  
+  error_grid = rep(NA, length(lambda_grid))
+  
+  # once for all
+  
+  x_range = range(x_grid)
+  
+  basis <- create.bspline.basis(x_range, basis_num)
+  B_temp_obs <- eval.basis(x_grid, basis)
+  
+  constranint_x_grid = seq(x_range[1], x_range[2],
+                           length = constraint_grid_npoints)
+  
+  B_const <- eval.basis(constranint_x_grid, basis)
+  
+  # get Penalty matrix
+  # same for all folds
+  
+  fdPar_obj = fdPar(
+    fdobj = basis,
+    Lfdobj = int2Lfd(2),
+    lambda = 1
+  )
+  
+  penmat <-smooth.basis(
+    x_grid,
+    y_matrix,
+    fdPar_obj
+  )$penmat
+  
+  
+  
+  for (i in 1:length(lambda_grid)){
+    
+    
+    cat("iter lambda: ")
+    cat(i)
+    cat("\n")
+    
+    # for each observation
+    # compute once quantities
+    
+    # this for loss
+    
+    
+    # this for constraint
+    
+    # Constraints: B_check %*% coef <= 1 and >= 0
+    Amat <- t(rbind(-B_const, diag(1, ncol(B_const))))
+    
+    bvec <- c(- rep(box_constraints[2], nrow(B_const)),
+              rep(box_constraints[1], ncol(B_const)))
+    
+    
+    temp_cols_error = rep(NA, NCOL(y_matrix))
+    
+    # for each column
+    for(colj in 1:NCOL(y_matrix)){
+      
+      temp_err = rep(NA, length(colj))
+      
+      # for each point
+      for(point_index in 1:length(colj)){
+        # QP components
+        Dmat <- t(B_temp_obs[-point_index,]) %*% B_temp_obs[-point_index,] + lambda_grid[i] * penmat
+        dvec <- t(B_temp_obs[-point_index,]) %*% y_matrix[-point_index,colj]
+        
+        temp_coef <- solve.QP(Dmat, dvec, Amat, bvec, meq = 0)$solution
+        
+        # prediction error
+        temp_err[point_index] = (y_matrix[point_index,colj] - 
+                                   B_const[point_index,] %*% temp_coef)^2
+        
+      }
+      
+      temp_cols_error[colj] = mean(temp_err)
+      
+    }
+    
+    error_grid[i] = mean(temp_cols_error)
+  }
+  
+  return(error_grid)
+  
+}
+
+
+
 
 
 # >> GCV Smoothing functions --------------------------------
@@ -567,6 +780,28 @@ MY.HEIGHT = 1000
 # │Falchi│------------------------------------
 # ╰──────╯
 
+
+falchi_basis_seq = 20:50
+
+falchi_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = falchi_meanspec_freqs,
+                          y_matrix = falchi_meanspec_amps,
+                          basis_num_seq = falchi_basis_seq,
+                          box_constraints = c(0,1))
+
+plot(falchi_basis_seq, falchi_loocv_pen_int, type = "l")
+
+falchi_lambda_grid = 10^(seq(-6, -3, length = 20))
+
+falchi_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
+                                                 y_matrix = falchi_meanspec_amps,
+                                                 basis_num = 110, # increment
+                                                 lambda_grid = falchi_lambda_grid,
+                                                 box_constraints = c(0,1))
+
+
+plot(log(falchi_lambda_grid, base = 10), falchi_loocv_pen_diff,
+     type = "b", pch = 16)
+
 nbasis = 80
 
 basis <- create.bspline.basis(range(falchi_meanspec_freqs),nbasis)
@@ -791,6 +1026,9 @@ falchi_basis_diff <- smooth.basis(
   falchi_meanspec_amps,
   falchi_fdPar
 )
+
+diag(falchi_basis_diff$penmat)
+
 
 # compare fitting
 par(mfrow = c(1, 2))
