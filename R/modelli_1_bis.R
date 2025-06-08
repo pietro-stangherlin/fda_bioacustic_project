@@ -275,7 +275,8 @@ LOOCVConstraintSplinesDiff = function(x_grid,
   
   return(list("lambda_grid" = lambda_grid,
               "loocv_err" = error_grid,
-              "lambda_min" = lambda_grid[which.min(error_grid)]))
+              "lambda_min" = lambda_grid[which.min(error_grid)],
+              "basis_num" = basis_num))
   
 }
 
@@ -1172,7 +1173,7 @@ falchi_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = falchi_meanspec_f
 
 falchi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
                                                         y_matrix = falchi_meanspec_amps,
-                                                        basis_num = 110,
+                                                        basis_num = falchi_loocv_pen_diff$basis_num,
                                                         my.lambda = falchi_loocv_pen_diff$lambda_min)
 par(mfrow = c(1,2))
 plot(falchi_loocv_pen_int$basis_num_seq,
@@ -1220,7 +1221,7 @@ gufi_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = gufi_meanspec_freqs
 
 gufi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = gufi_meanspec_freqs,
                                                         y_matrix = gufi_meanspec_amps,
-                                                        basis_num = 110,
+                                                        basis_num = basis_num = gufi_loocv_pen_diff$basis_num,
                                                         my.lambda = gufi_loocv_pen_diff$lambda_min)
 par(mfrow = c(1,2))
 plot(gufi_loocv_pen_int$basis_num_seq,
@@ -1267,7 +1268,7 @@ gabbiani_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = gabbiani_meansp
 
 gabbiani_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = gabbiani_meanspec_freqs,
                                                       y_matrix = gabbiani_meanspec_amps,
-                                                      basis_num = 110,
+                                                      basis_num = basis_num = gabbiani_loocv_pen_diff$basis_num,
                                                       my.lambda = gabbiani_loocv_pen_diff$lambda_min)
 par(mfrow = c(1,2))
 plot(gabbiani_loocv_pen_int$basis_num_seq,

@@ -30,7 +30,27 @@ I dati considerati sono presenti sul portale [xeno-canto](https://xeno-canto.org
 -   Normalizzazione delle ampiezze
 
 ### Rappresentazione funzionale
-Lisciamento.
+Per le curve di Ampiezza in funzione della frequenza si è scelta una rappresentazione in base bspline di grado 3.
+Inizialmente si sono considerate due penalizzazioni: la prima sul numero di basi e la seconda sull'integrale del quadrato della derivata seconda (per un numero di basi abbastanza alto fissato), per entrambi i casi si è considerato come riferimento il parametro che minizzasse il criterio di GCV.
+Tuttavia questi due criteri non permettono il rispetto dei vincoli: 
+  1) di non negatività della curva
+  2) di Ampiezza non superiore a 1 (a causa della normalizzazione)
+  
+Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica per cui sono disponibili delle routine note.
+Il programma di ottimizzazione quadratica nella sua forma più generale è definito come
+
+$$
+\text{min}_{b}(-d^Tb + 1/2b^TDb) \text{ s.b. } A^Tb \geq b_0
+$$
+Per una singola osservazione funzionale, per il lisciamento tramite scrittura in funzioni di base la funzione da minimizzare rispetto a $b$ è
+$$
+(y - \Phi b)^T(y - \Phi b) + \lambda b^T Pb
+$$
+dove $y$ è il vettore dei punti osservati $\Phi$ è la matrice delle funzioni di base valutate nei punti osservati del dominio della curva e $b$ + un vettore di coefficienti; $P$ è una generica matrice di penalità e $\lambda > 0$ indica l'entità della penalizzaione.
+
+
+
+
 
 ## Medie funzionali
 
