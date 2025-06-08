@@ -903,7 +903,7 @@ plot(falchi_nbasis_gcv$n_basis_seq, falchi_nbasis_gcv$gcv_vals, type = "l")
 falchi_basis_int = create.bspline.basis(
   rangeval = range(falchi_meanspec_freqs),
   norder = NORDER,
-  nbasis = 64
+  nbasis = falchi_nbasis_gcv$best_n_basis
 )
 
 falchi_meanspec_fd_int = smooth.basis(
@@ -912,6 +912,9 @@ falchi_meanspec_fd_int = smooth.basis(
   falchi_basis_int
 )$fd
 
+falchi_meanspec_fd_int$fdnames = list("frequency" = falchi_meanspec_freqs,
+                                      "reps" = rep("y", length(falchi_meanspec_fd_int$fdnames$reps)),
+                                      "values" = "Amplitude")
 
 # Changing lambda penalty
 
@@ -949,30 +952,19 @@ falchi_fdPar = fdPar(
   lambda = falchi_LD_gcv$best_lambda
 )
 
-falchi_meanspec_fd_diff <- smooth.basis(
-  falchi_meanspec_freqs,
-  falchi_meanspec_amps,
-  falchi_fdPar
-)$fd
-
 falchi_basis_diff <- smooth.basis(
   falchi_meanspec_freqs,
   falchi_meanspec_amps,
   falchi_fdPar
 )
 
-diag(falchi_basis_diff$penmat)
+falchi_basis_diff$fd$fdnames = list("frequency" = falchi_meanspec_freqs,
+                                      "reps" = rep("y", length(falchi_basis_diff$fd$fdnames$reps)),
+                                      "values" = "Amplitude")
 
 
-# compare fitting
-par(mfrow = c(1, 2))
+falchi_meanspec_fd_diff = falchi_basis_diff$fd
 
-plot(falchi_meanspec_fd_int, main = "Int penalty") # border problem
-plot(falchi_meanspec_fd_diff, main = "Diff penalty") # choose this one
-
-par(mfrow = c(1, 1))
-
-falchi_meanspec_fd = falchi_meanspec_fd_diff
 
 
 # ╭────╮
@@ -1003,7 +995,7 @@ abline(v = gufi_nbasis_gcv$best_n_basis, col = "red")
 gufi_basis_int = create.bspline.basis(
   rangeval = range(gufi_meanspec_freqs),
   norder = NORDER,
-  nbasis = 90
+  nbasis = gufi_nbasis_gcv$best_n_basis
 ) # too much variability
 
 gufi_meanspec_fd_int = smooth.basis(
@@ -1011,6 +1003,10 @@ gufi_meanspec_fd_int = smooth.basis(
   gufi_meanspec_amps,
   gufi_basis_int
 )$fd
+
+gufi_meanspec_fd_int$fdnames = list("frequency" = gufi_meanspec_freqs,
+                                      "reps" = rep("y", length(gufi_meanspec_fd_int$fdnames$reps)),
+                                      "values" = "Amplitude")
 
 
 # Changing lambda penalty
@@ -1035,7 +1031,7 @@ min(gufi_LD_gcv$gcv_vals)
 gufi_basis_max = create.bspline.basis(
   rangeval = range(gufi_meanspec_freqs),
   norder = NORDER,
-  nbasis = row(gufi_meanspec_amps)
+  nbasis = nrow(gufi_meanspec_amps)
 )
 gufi_fdPar = fdPar(
   fdobj = gufi_basis_max,
@@ -1049,14 +1045,11 @@ gufi_meanspec_fd_diff <- smooth.basis(
   gufi_fdPar
 )$fd
 
+gufi_meanspec_fd_diff$fdnames = list("frequency" = gufi_meanspec_freqs,
+                                    "reps" = rep("y", length(gufi_meanspec_fd_diff$fdnames$reps)),
+                                    "values" = "Amplitude")
+
 # compare fitting
-par(mfrow = c(1, 2))
-
-plot(gufi_meanspec_fd_int, main = "Int penalty") # border problem
-plot(gufi_meanspec_fd_diff, main = "Diff penalty") # choose this one
-
-par(mfrow = c(1, 1))
-
 gufi_meanspec_fd = gufi_meanspec_fd_diff
 
 # ╭────────╮
@@ -1088,7 +1081,7 @@ plot(gabbiani_nbasis_gcv$n_basis_seq, gabbiani_nbasis_gcv$gcv_vals, type = "l")
 gabbiani_basis_int = create.bspline.basis(
   rangeval = range(gabbiani_meanspec_freqs),
   norder = NORDER,
-  nbasis = 100
+  nbasis = gabbiani_nbasis_gcv$best_n_basis
 )
 
 gabbiani_meanspec_fd_int = smooth.basis(
@@ -1097,6 +1090,10 @@ gabbiani_meanspec_fd_int = smooth.basis(
   gabbiani_basis_int
 )$fd
 
+
+gabbiani_meanspec_fd_int$fdnames = list("frequency" = gabbiani_meanspec_freqs,
+                                         "reps" = rep("y", length(gabbiani_meanspec_fd_int$fdnames$reps)),
+                                         "values" = "Amplitude")
 
 # Changing lambda penalty
 
@@ -1138,15 +1135,9 @@ gabbiani_meanspec_fd_diff <- smooth.basis(
   gabbiani_fdPar
 )$fd
 
-# compare fitting
-par(mfrow = c(1, 2))
-# here the problematic is inverted
-plot(gabbiani_meanspec_fd_int, main = "Int penalty") # choose this one
-plot(gabbiani_meanspec_fd_diff, main = "Diff penalty") # border problem
-
-par(mfrow = c(1, 1))
-
-gabbiani_meanspec_fd = gabbiani_meanspec_fd_int
+gabbiani_meanspec_fd_diff$fdnames = list("frequency" = gabbiani_meanspec_freqs,
+                                     "reps" = rep("y", length(gabbiani_meanspec_fd_diff$fdnames$reps)),
+                                     "values" = "Amplitude")
 
 
 # >> Regularize fit via Constraint Splines -----------------------
@@ -1175,6 +1166,9 @@ falchi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = falchi_meanspec
                                                         y_matrix = falchi_meanspec_amps,
                                                         basis_num = falchi_loocv_pen_diff$basis_num,
                                                         my.lambda = falchi_loocv_pen_diff$lambda_min)
+
+falchi_meanspec_fd = falchi_meanspec_fd_con_diff
+
 par(mfrow = c(1,2))
 plot(falchi_loocv_pen_int$basis_num_seq,
      falchi_loocv_pen_int$loocv_err, type = "b", pch = 16,
@@ -1188,14 +1182,6 @@ plot(log(falchi_loocv_pen_diff$lambda_grid, base = 10),
 par(mfrow = c(1,1))
 
 
-par(mfrow = c(1,2))
-plot(falchi_meanspec_fd_con_int,
-     main = paste0("Falchi Constraint Splines - nbasis: ",
-                   falchi_loocv_pen_int$basis_min, collapse = ""))
-plot(falchi_meanspec_fd_con_diff,
-     main = paste0("Falchi Constraint Penalized Splines - log(lambda): ",
-                   round(log(falchi_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
-par(mfrow = c(1,1))
 
 
 
@@ -1212,7 +1198,7 @@ gufi_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = gufi_meanspec_freqs,
 gufi_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = gufi_meanspec_freqs,
                                                    y_matrix = gufi_meanspec_amps,
                                                    basis_num = 110,
-                                                   lambda_grid = 10^(seq(-6, -3, length = 20)),
+                                                   lambda_grid = 10^(seq(-10, -3, length = 20)),
                                                    box_constraints = c(0,1))
 
 gufi_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = gufi_meanspec_freqs,
@@ -1221,8 +1207,10 @@ gufi_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = gufi_meanspec_freqs
 
 gufi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = gufi_meanspec_freqs,
                                                         y_matrix = gufi_meanspec_amps,
-                                                        basis_num = basis_num = gufi_loocv_pen_diff$basis_num,
+                                                        basis_num = gufi_loocv_pen_diff$basis_num,
                                                         my.lambda = gufi_loocv_pen_diff$lambda_min)
+gufi_meanspec_fd = gufi_meanspec_fd_con_diff
+
 par(mfrow = c(1,2))
 plot(gufi_loocv_pen_int$basis_num_seq,
      gufi_loocv_pen_int$loocv_err, type = "b", pch = 16,
@@ -1236,14 +1224,7 @@ plot(log(gufi_loocv_pen_diff$lambda_grid, base = 10),
 par(mfrow = c(1,1))
 
 
-par(mfrow = c(1,2))
-plot(gufi_meanspec_fd_con_int,
-     main = paste0("gufi Constraint Splines - nbasis: ",
-                   gufi_loocv_pen_int$basis_min, collapse = ""))
-plot(gufi_meanspec_fd_con_diff,
-     main = paste0("gufi Constraint Penalized Splines - log(lambda): ",
-                   round(log(gufi_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
-par(mfrow = c(1,1))
+
 
 
 # ╭────────╮
@@ -1259,7 +1240,7 @@ gabbiani_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = gabbiani_meanspec_fr
 gabbiani_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = gabbiani_meanspec_freqs,
                                                  y_matrix = gabbiani_meanspec_amps,
                                                  basis_num = 110,
-                                                 lambda_grid = 10^(seq(-6, -3, length = 20)),
+                                                 lambda_grid = 10^(seq(-10, -3, length = 20)),
                                                  box_constraints = c(0,1))
 
 gabbiani_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = gabbiani_meanspec_freqs,
@@ -1268,8 +1249,10 @@ gabbiani_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = gabbiani_meansp
 
 gabbiani_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = gabbiani_meanspec_freqs,
                                                       y_matrix = gabbiani_meanspec_amps,
-                                                      basis_num = basis_num = gabbiani_loocv_pen_diff$basis_num,
+                                                      basis_num = gabbiani_loocv_pen_diff$basis_num,
                                                       my.lambda = gabbiani_loocv_pen_diff$lambda_min)
+gabbiani_meanspec_fd = gabbiani_meanspec_fd_con_diff
+
 par(mfrow = c(1,2))
 plot(gabbiani_loocv_pen_int$basis_num_seq,
      gabbiani_loocv_pen_int$loocv_err, type = "b", pch = 16,
@@ -1283,15 +1266,84 @@ plot(log(gabbiani_loocv_pen_diff$lambda_grid, base = 10),
 par(mfrow = c(1,1))
 
 
-par(mfrow = c(1,2))
+# .. joint plot -------------------------------------------
+# here join is meant same species but different criterions
+
+# ╭──────╮
+# │Falchi│------------------------------------
+# ╰──────╯
+
+png("results/prima_parte/images/falchi_fits_crit.png",
+    width = MY.WIDTH, height = MY.HEIGHT)
+
+# compare fitting
+par(mfrow = c(2, 2))
+
+plot(falchi_meanspec_fd_int, main = paste0("Falchi GCV Int - nbasis: ",
+                                           falchi_meanspec_fd_int$basis$nbasis, collapse = "")) # border problem
+plot(falchi_meanspec_fd_diff, main = paste0("Falchi GCV Diff - log(lambda): ",
+                                            round(log(falchi_LD_gcv$best_lambda, base = 10),2), collapse = "")) # choose this one
+
+
+plot(falchi_meanspec_fd_con_int,
+     main = paste0("Falchi Constraint LOOCV Int - nbasis: ",
+                   falchi_loocv_pen_int$basis_min, collapse = ""))
+plot(falchi_meanspec_fd_con_diff,
+     main = paste0("Falchi Constraint LOOCV Diff - log(lambda): ",
+                   round(log(falchi_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
+par(mfrow = c(1,1))
+
+dev.off()
+
+# ╭────╮
+# │Gufi│ ----------------------------------------------------------
+# ╰────╯
+
+png("results/prima_parte/images/gufi_fits_crit.png",
+    width = MY.WIDTH, height = MY.HEIGHT)
+
+par(mfrow = c(2, 2))
+
+plot(gufi_meanspec_fd_int, main = paste0("Gufi GCV Int - nbasis: ",
+                                           gufi_meanspec_fd_int$basis$nbasis, collapse = "")) # border problem
+plot(gufi_meanspec_fd_diff, main = paste0("Gufi GCV Diff - log(lambda): ",
+                                            round(log(gufi_LD_gcv$best_lambda, base = 10),2), collapse = "")) # choose this one
+
+
+plot(gufi_meanspec_fd_con_int,
+     main = paste0("Gufi Constraint LOOCV Int - nbasis: ",
+                   gufi_loocv_pen_int$basis_min, collapse = ""))
+plot(gufi_meanspec_fd_con_diff,
+     main = paste0("Gufi Constraint LOOCV Diff - log(lambda): ",
+                   round(log(gufi_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
+par(mfrow = c(1,1))
+
+dev.off()
+
+# ╭────────╮
+# │Gabbiani│ ------------------------------------------------------------------
+# ╰────────╯
+
+png("results/prima_parte/images/gabbiani_fits_crit.png",
+    width = MY.WIDTH, height = MY.HEIGHT)
+
+par(mfrow = c(2, 2))
+
+plot(gabbiani_meanspec_fd_int, main = paste0("Gabbiani GCV Int - nbasis: ",
+                                           gabbiani_meanspec_fd_int$basis$nbasis, collapse = "")) # border problem
+plot(gabbiani_meanspec_fd_diff, main = paste0("Gabbiani GCV Diff - log(lambda): ",
+                                            round(log(gabbiani_LD_gcv$best_lambda, base = 10),2), collapse = "")) # choose this one
+
+
 plot(gabbiani_meanspec_fd_con_int,
-     main = paste0("gabbiani Constraint Splines - nbasis: ",
+     main = paste0("Gabbiani Constraint LOOCV Int - nbasis: ",
                    gabbiani_loocv_pen_int$basis_min, collapse = ""))
 plot(gabbiani_meanspec_fd_con_diff,
-     main = paste0("gabbiani Constraint Penalized Splines - log(lambda): ",
+     main = paste0("Gabbiani Constraint LOOCV Diff - log(lambda): ",
                    round(log(gabbiani_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
 par(mfrow = c(1,1))
 
+dev.off()
 
 # >>f Means ---------------------------------
 

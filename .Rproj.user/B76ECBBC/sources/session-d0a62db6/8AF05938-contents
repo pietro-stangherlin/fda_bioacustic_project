@@ -30,27 +30,52 @@ I dati considerati sono presenti sul portale [xeno-canto](https://xeno-canto.org
 -   Normalizzazione delle ampiezze
 
 ### Rappresentazione funzionale
+
+#### Spline penalizzate e vincolate
+
 Per le curve di Ampiezza in funzione della frequenza si è scelta una rappresentazione in base bspline di grado 3.
 Inizialmente si sono considerate due penalizzazioni: la prima sul numero di basi e la seconda sull'integrale del quadrato della derivata seconda (per un numero di basi abbastanza alto fissato), per entrambi i casi si è considerato come riferimento il parametro che minizzasse il criterio di GCV.
 Tuttavia questi due criteri non permettono il rispetto dei vincoli: 
   1) di non negatività della curva
-  2) di Ampiezza non superiore a 1 (a causa della normalizzazione)
+  2) di ampiezza non superiore a 1 (a causa della normalizzazione).
   
-Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica per cui sono disponibili delle routine note.
+Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica per cui sono disponibili delle routine.
 Il programma di ottimizzazione quadratica nella sua forma più generale è definito come
 
 $$
-\text{min}_{b}(-d^Tb + 1/2b^TDb) \text{ s.b. } A^Tb \geq b_0
-$$
+\text{min}_{b}(-d^Tb + 1/2b^TDb) \text{ s.t. } A^Tb \geq b_0
+$${#eq-qp}
 Per una singola osservazione funzionale, per il lisciamento tramite scrittura in funzioni di base la funzione da minimizzare rispetto a $b$ è
+
 $$
 (y - \Phi b)^T(y - \Phi b) + \lambda b^T Pb
+$${#eq-basisloss}
+dove $y$ è il vettore dei punti osservati $\Phi$ è la matrice delle funzioni di base valutate nei punti osservati del dominio della curva e $b$ è il vettore dei coefficienti, $P$ è una generica matrice di penalità e $\lambda > 0$ indica l'entità della penalizzaione (per un criterio non penalizzato è sufficiente porre $\lambda = 0$).
+Minizzare @eq-basisloss equivale a minizzare 
+
 $$
-dove $y$ è il vettore dei punti osservati $\Phi$ è la matrice delle funzioni di base valutate nei punti osservati del dominio della curva e $b$ + un vettore di coefficienti; $P$ è una generica matrice di penalità e $\lambda > 0$ indica l'entità della penalizzaione.
+-y^T \Phi b + b^T \frac{1}{2}(\Phi^T \Phi + \lambda P) b
+$${#eq-basislossexp}
 
+Da cui $d = y^T \Phi$ e $D = \Phi^T \Phi + \lambda P$.
+Usando la definizione di scrittura in basi il vincolo è $0 \leq \phi^T(f)b \leq 1 \quad \forall f$, in pratica si discretizza $\phi(f_j)$ per $j = 1,..,J$.
+Sia $\Phi_J$ la matrice di funzioni di base valuate su griglia discretizzata: deve valere $\Phi_J b \leq \mathbb{1}$ o equivalentemente $-\Phi_J b \geq -\mathbb{1}$ dove con questa scrittura si intende che la disuguaglianza deve valere per ogni elemento dei vettori.
+Similmente, per vincolo di positività si ha $\Phi_J b \geq \mathbb{0}$, tuttavia, poichè per costruzione le basi bspline sono sempre non negative è sufficiente imporre $\mathbb{I} b \geq \mathbb{0}$ con $\mathbb{I}_J$ matrice identità. Combinando le due espressioni si ottiene 
 
+$$ \begin{pmatrix}
+-\Phi\\
+\mathbb{I}
+\end{pmatrix} b \geq \begin{pmatrix}
+-\mathbb{1}\\
+\mathbb{0}
+\end{pmatrix}$$
 
+chiaramente $A = (-\Phi^T \quad \mathbb{I})$ e $b_0 = (-\mathbb{1} \quad \mathbb{0})^T$, è dunque conclusa la scrittura del problema vincolato come programma quadratico.
 
+#### Risultati
+
+Introdurre i vincoli non dà luogo ad uno stimatore lineare in $y$, non è quindi possibile usare GCV come criterio per la selezione dei parametri di regolazione, si impiega invece una procedura di convalida incrociata "Leave One Out" (LOOCV).
+A titolo esemplificativo si riportano le curve relative ai gufi con i quattro metodi: GCV senza vincolo e LOOCV con vincolo.
 
 ## Medie funzionali
 
