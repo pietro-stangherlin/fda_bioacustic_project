@@ -316,8 +316,6 @@ ComputeBetaSd = function(factor,
   yt = cbind(X, 0)
   Xt = rbind(factor_matrix, c(0, rep(1, length(levels(factor)))))
   
-  fdobj = smooth.basis(dom, X, basis_y)$fd
-  
   
   B = cbind(coef_y, 0) # constraint
   yfd = fd(B, basis_y, y_names)
@@ -338,7 +336,8 @@ ComputeBetaSd = function(factor,
   m1 = fRegress(yfd, xlist, betalist)
   
   # compute functional standard errors
-  SigmaE = diag(apply(eval.fd(dom, fdobj), 1, var))
+  # NOTE: change yfd with another basis system for errors 
+  SigmaE = diag(apply(eval.fd(dom, yfd), 1, var))
   
   return(list("model" = m1,
               "beta_se" = fRegress.stderr(
@@ -367,9 +366,6 @@ PermutFANOVA = function(factor,
   yt = cbind(X, 0)
   Xt = rbind(factor_matrix, c(0, rep(1, length(levels(factor)))))
   
-  fdobj = smooth.basis(dom, X, basis_y)$fd
-  
-  
   B = cbind(coef_y, 0) # vincolo
   yfd = fd(B, basis_y, y_names)
   
@@ -387,14 +383,6 @@ PermutFANOVA = function(factor,
   betalist[[1]] = fdPar(basis_beta, lambda = 0)
   
   m1 = fRegress(yfd, xlist, betalist)
-  
-  # compute functional standard errors
-  SigmaE = diag(apply(eval.fd(dom, fdobj), 1, var))
-  beta_se = fRegress.stderr(
-    m1,
-    smooth.basis(dom, X, basis_y)$y2cMap,
-    SigmaE
-  )
   
   
   # Permutations 
@@ -579,14 +567,24 @@ MY.HEIGHT = 1000
 # │Falchi│------------------------------------
 # ╰──────╯
 
+nbasis = 80
 
-basis <- create.bspline.basis(range(falchi_meanspec_freqs),80)
+basis <- create.bspline.basis(range(falchi_meanspec_freqs),nbasis)
 B = eval.basis(falchi_meanspec_freqs, basis)
+
+BasisCoefMatr = matrix(NA,
+                       nrow = nbasis,
+                       ncol = NCOL(falchi_meanspec_amps))
+
 
 temp_coef = ConstraintSplinesFit(x_grid = falchi_meanspec_freqs,
                                  y_vals = falchi_meanspec_amps[,1],
                                  basis = basis,
                                  box_constraints = c(0,1))$coef
+
+BasisCoefMatr[,1] = temp_coef
+
+
 
 x_fine <- seq(min(falchi_meanspec_freqs),
               max(falchi_meanspec_freqs), length.out = 500)
@@ -605,7 +603,10 @@ for(i in 2:NCOL(falchi_meanspec_amps)){
                                    basis = basis,
                                    box_constraints = c(0,1))$coef
   
-  y_fine <- B_fine %*% temp_coef
+  
+  BasisCoefMatr[,i] = temp_coef
+  
+  y_fine <- B_fine %*% as.matrix(temp_coef)
   max_y = max(c(max_y, y_fine))
   
   lines(x_fine, y_fine, col = i)
@@ -614,6 +615,8 @@ for(i in 2:NCOL(falchi_meanspec_amps)){
 max_y
 abline(h = 1, lwd = 1)
 
+falchi_meanspec_fd = fd(coef = BasisCoefMatr,
+                        basisobj = basis)
 
 # ╭────╮
 # │Gufi│ ----------------------------------------------------------
@@ -653,7 +656,7 @@ for(i in 2:NCOL(gufi_meanspec_amps)){
   lines(x_fine, y_fine, col = i)
 }
 
-abline(h = 1, lwd = 2)
+# abline(h = 1, lwd = 1)
 
 max_y
 
@@ -980,6 +983,7 @@ gabbiani_meanspec_fd = gabbiani_meanspec_fd_int
 # │Falchi│------------------------------------
 # ╰──────╯
 
+
 falchi_meanspec_fd_mean = lapply(
   levels(falchi$Climate_zone),
   function(i) mean.fd(falchi_meanspec_fd[falchi$Climate_zone == i])
@@ -1195,8 +1199,8 @@ set.seed(123)
 cv_fanova_res_falchi = CvFunctionalANOVA(factor = falchi$Climate_zone,
                   X = falchi_meanspec_amps,
                   dom = falchi_meanspec_freqs,
-                  basis_y = falchi_meanspec_fd_diff$basis,
-                  coef_y = falchi_meanspec_fd_diff$coefs,
+                  basis_y = falchi_meanspec_fd$basis,
+                  coef_y = falchi_meanspec_fd$coefs,
                   y_names = falchi_meanspec_fd_diff$fdnames,
                   basis_beta = falchi_meanspec_fd_diff$basis,
                   lambda_grid = 1:5,
@@ -1206,23 +1210,27 @@ cv_fanova_res_falchi = CvFunctionalANOVA(factor = falchi$Climate_zone,
 falchi_anova_model = ComputeBetaSd(factor = falchi$Climate_zone,
                                X = falchi_meanspec_amps,
                                dom = falchi_meanspec_freqs,
-                               basis_y = falchi_meanspec_fd_diff$basis,
-                               coef_y = falchi_meanspec_fd_diff$coefs,
+                               basis_y = falchi_meanspec_fd$basis,
+                               coef_y = falchi_meanspec_fd$coefs,
                                y_names = falchi_meanspec_fd_diff$fdnames,
                                basis_beta = falchi_meanspec_fd_diff$basis,
                                lambda = cv_fanova_res_falchi$lambda_min)
+
+gc()
 
 # ftest
 perm_fanova_res_falchi = PermutFANOVA(factor = falchi$Climate_zone,
                                       X = falchi_meanspec_amps,
                                       dom = falchi_meanspec_freqs,
-                                      basis_y = falchi_meanspec_fd_diff$basis,
-                                      coef_y = falchi_meanspec_fd_diff$coefs,
+                                      basis_y = falchi_meanspec_fd$basis,
+                                      coef_y = falchi_meanspec_fd$coefs,
                                       y_names = falchi_meanspec_fd_diff$fdnames,
                                       basis_beta = falchi_meanspec_fd_diff$basis,
                                       lambda = cv_fanova_res_falchi$lambda_min,
                                       n_perm = 100,
                                       seed = 123)
+
+gc()
 
 
 fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
@@ -1262,6 +1270,8 @@ gufi_anova_model = ComputeBetaSd(factor = gufi$Climate_zone,
                                    basis_beta = gufi_meanspec_fd_diff$basis,
                                    lambda = cv_fanova_res_gufi$lambda_min)
 
+gc()
+
 # ftest
 perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
                                       X = gufi_meanspec_amps,
@@ -1273,6 +1283,8 @@ perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
                                       lambda = cv_fanova_res_gufi$lambda_min,
                                       n_perm = 100,
                                       seed = 123)
+
+gc()
 
 
 fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
@@ -1302,6 +1314,8 @@ cv_fanova_res_gabbiani = CvFunctionalANOVA(factor = gabbiani$Cluster,
                                        lambda_grid = 10^seq(-4, 0, by = 0.5),
                                        nfold = 5)
 
+gc()
+
 # fit model + beta se
 gabbiani_anova_model = ComputeBetaSd(factor = gabbiani$Cluster,
                                  X = gabbiani_meanspec_amps,
@@ -1323,6 +1337,8 @@ perm_fanova_res_gabbiani = PermutFANOVA(factor = gabbiani$Cluster,
                                     lambda = cv_fanova_res_gabbiani$lambda_min,
                                     n_perm = 100,
                                     seed = 123)
+
+gc()
 
 
 fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
@@ -1380,7 +1396,6 @@ plot(
   perm_fanova_res_falchi$fobs,
   type = 'l',
   lwd = 2,
-  ylim = c(0, 1.1),
   main = "Ftest Falchi",
   xlab = "Frequenza",
   ylab = "F"
