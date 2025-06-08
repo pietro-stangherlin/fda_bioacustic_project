@@ -9,6 +9,20 @@ format:
     number-sections: true
 ---
 
+```{r include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+```{r}
+library(knitr)
+```
+
+
+
+
 ## Introduzione
 
 ## Obbiettivi
@@ -75,9 +89,35 @@ chiaramente $A = (-\Phi^T \quad \mathbb{I})$ e $b_0 = (-\mathbb{1} \quad \mathbb
 #### Risultati
 
 Introdurre i vincoli non dà luogo ad uno stimatore lineare in $y$, non è quindi possibile usare GCV come criterio per la selezione dei parametri di regolazione, si impiega invece una procedura di convalida incrociata "Leave One Out" (LOOCV).
-A titolo esemplificativo si riportano le curve relative ai gufi con i quattro metodi: GCV senza vincolo e LOOCV con vincolo.
+A titolo esemplificativo si riportano le curve relative ai gufi con i quattro metodi: GCV senza vincolo e LOOCV con vincolo; in  @tab:representation-selection-df sono riportate le specifiche di ciascun metodo.
 
+
+```{r}
+load("../results/prima_parte/outputs/representation_selection_df.RData")
+```
+
+
+```{r, #tab-representation-selection-df, include= TRUE}
+kable(representation_selection_df)
+```
+
+
+![Funzioni Gufi](..\\results\\prima_parte\\images\\gufi_fits_crit.png){#fig-gufi_fits_crit}
+Esaminando \@fig-gufi_fits_crit si evidenziano diverse problematiche:
+
+  - nel caso senza vincoli e con penalizzazione solo sul numero di basi (grafico in alto a sinistra) il criterio GCV seleziona un numero eccessivo di basi (vicino al massimo possibile) che induce dei gravi problemi di comportamento erratico agli estremi, una possible soluzione è selezionare manualmente il numero di basi osservando criticamente sia l'andamento dell'errore di GCV sia le funzioni risultanti.
+  
+  - nel caso senza vincoli e con penalizzazione sull'integrale della derivata seconda al quadrato (grafico in alto a destra), benchè il miglioramento rispetto al primo caso sia notevole, si nota come le funzioni non rispettino i vincoli: alcune funzioni sono minori di zero (per frequenze piccole) e  maggiori di 1.
+  
+- i vincoli migliorano chiaramente la rappresentazione funzionale, tuttavia, il numero di basi che minimizza LOOCV (grafico in basso a sinistra) è probabilmente troppo piccolo in quanto alcune funzioni hanno dei picchi troppo bassi, anche qui si potrebbe pensare di aumentare il numero di basi; nell'ultimo caso (penalizzaione sull'integrale della derivata seconda al quadrato) (grafico in basso a destra) una possibile critica è che le funzioni non siano abbastanza lisce.
+
+Risultati simili si hanno anche con le altre due specie.
+Alla luce dei commenti fatti si è scelto di impiegare i coefficienti ottenuti tramite imposizione di vincolo con penalità sull'integrale del quadrato della derivata seconda.
+
+  
 ## Medie funzionali
+
+In @fig-f_mean_sd si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
 
 ![Medie Funzionali](..\\results\\prima_parte\\images\\f_mean_sd.png){#fig-f_mean_sd}
 

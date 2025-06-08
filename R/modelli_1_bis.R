@@ -1058,9 +1058,6 @@ gufi_meanspec_fd = gufi_meanspec_fd_diff
 
 dim(gabbiani_meanspec_amps)
 
-# test
-gabbiani_meanspec_amps = gabbiani_meanspec_amps[,which(gabbiani_meanspec_amps[1,] > 0.1)]
-
 n_basis_seq = seq(20, nrow(gabbiani_meanspec_amps) - 2)
 NORDER = 4
 rangeval_gabbiani <- range(gabbiani_meanspec_freqs)
@@ -1265,6 +1262,31 @@ plot(log(gabbiani_loocv_pen_diff$lambda_grid, base = 10),
      ylab = "LOOCV error")
 par(mfrow = c(1,1))
 
+# .. parameters table ------------------------------------
+
+representation_selection_df = data.frame("animal" = c(rep("falchi", 4), rep("gufi", 4), rep("gabbiani", 4)),
+                                         "constraint" = rep(c(FALSE, FALSE, TRUE, TRUE), 3) ,
+                                         "penalty type" = rep(c("INT", "DIFF", "INT", "DIFF"), 3) ,
+                                         "min error parameter" = c(falchi_nbasis_gcv$best_n_basis,
+                                                                   falchi_LD_gcv$best_lambda,
+                                                                   falchi_loocv_pen_int$basis_min,
+                                                                   falchi_loocv_pen_diff$lambda_min,
+                                                                   gufi_nbasis_gcv$best_n_basis,
+                                                                   gufi_LD_gcv$best_lambda,
+                                                                   gufi_loocv_pen_int$basis_min,
+                                                                   gufi_loocv_pen_diff$lambda_min,
+                                                                   gabbiani_nbasis_gcv$best_n_basis,
+                                                                   gabbiani_LD_gcv$best_lambda,
+                                                                   gabbiani_loocv_pen_int$basis_min,
+                                                                   gabbiani_loocv_pen_diff$lambda_min),
+                                         "domain unique points" = c(rep(nrow(falchi_meanspec_amps), 4),
+                                                    rep(nrow(gufi_meanspec_amps), 4),
+                                                    rep(nrow(gabbiani_meanspec_amps), 4)))
+
+representation_selection_df
+
+save(representation_selection_df,
+     file = "results/prima_parte/outputs/representation_selection_df.RData")
 
 # .. joint plot -------------------------------------------
 # here join is meant same species but different criterions
@@ -1357,24 +1379,10 @@ falchi_meanspec_fd_mean = lapply(
   function(i) mean.fd(falchi_meanspec_fd[falchi$Climate_zone == i])
 )
 
-# Deviazioni standard funzionali
-falchi_freqs_grid = seq(
-  rangeval_falchi[1],
-  rangeval_falchi[2],
-  length.out = 201
+falchi_meanspec_fd_sd = lapply(
+  levels(falchi$Climate_zone),
+  function(i) sd.fd(falchi_meanspec_fd[falchi$Climate_zone == i])
 )
-falchi_sd_fd_matrix = eval.fd(falchi_freqs_grid, falchi_meanspec_fd)
-
-
-falchi_meanspec_fd_sd = lapply(levels(falchi$Climate_zone), function(i) {
-  Data2fd(
-    argvals = falchi_freqs_grid,
-    y = apply(falchi_sd_fd_matrix[, falchi$Climate_zone == i], 1, sd),
-    basisobj = falchi_fdPar$fd$basis,
-    nderiv = falchi_fdPar$Lfd$nderiv,
-    lambda = falchi_fdPar$lambda
-  )
-})
 
 
 # ╭────╮
@@ -1386,24 +1394,10 @@ gufi_meanspec_fd_mean = lapply(
   function(i) mean.fd(gufi_meanspec_fd[gufi$Climate_zone == i])
 )
 
-# Deviazioni standard funzionali
-gufi_freqs_grid = seq(
-  rangeval_gufi[1],
-  rangeval_gufi[2],
-  length.out = 201
+gufi_meanspec_fd_sd = lapply(
+  levels(gufi$Climate_zone),
+  function(i) sd.fd(gufi_meanspec_fd[gufi$Climate_zone == i])
 )
-
-gufi_sd_fd_matrix = eval.fd(gufi_freqs_grid, gufi_meanspec_fd)
-
-gufi_meanspec_fd_sd = lapply(levels(gufi$Climate_zone), function(i) {
-  Data2fd(
-    argvals = gufi_freqs_grid,
-    y = apply(gufi_sd_fd_matrix[, gufi$Climate_zone == i], 1, sd),
-    basisobj = gufi_fdPar$fd$basis,
-    nderiv = gufi_fdPar$Lfd$nderiv,
-    lambda = gufi_fdPar$lambda
-  )
-})
 
 
 
@@ -1417,23 +1411,10 @@ gabbiani_meanspec_fd_mean = lapply(
   function(i) mean.fd(gabbiani_meanspec_fd[gabbiani$Cluster == i])
 )
 
-# Deviazioni standard funzionali
-gabbiani_freqs_grid = seq(
-  rangeval_gabbiani[1],
-  rangeval_gabbiani[2],
-  length.out = 201
+gabbiani_meanspec_fd_sd = lapply(
+  levels(gabbiani$Cluster),
+  function(i) sd.fd(gabbiani_meanspec_fd[gabbiani$Cluster == i])
 )
-gabbiani_sd_fd_matrix = eval.fd(gabbiani_freqs_grid, gabbiani_meanspec_fd)
-
-
-gabbiani_meanspec_fd_sd = lapply(levels(gabbiani$Cluster), function(i) {
-  Data2fd(
-    argvals = gabbiani_freqs_grid,
-    y = apply(gabbiani_sd_fd_matrix[, gabbiani$Cluster == i], 1, sd),
-    basisobj = gabbiani_basis_int,
-  )
-})
-
 
 # ..joint plot ---------------
 
@@ -1458,7 +1439,7 @@ FunctionalMeanBandPlot(fd_means = falchi_meanspec_fd_mean,
 FunctionalMeanBandPlot(fd_means = gufi_meanspec_fd_mean,
                        fd_sds = gufi_meanspec_fd_sd,
                        my.main = "Medie Funzionali ± Sd Gufi",
-                       my.ylim = c(0,0.8),
+                       my.ylim = c(0,1),
                        my.lwd = 2,
                        my.xlab = "Frequenza",
                        my.ylab = "Ampiezza",
@@ -1470,7 +1451,7 @@ FunctionalMeanBandPlot(fd_means = gufi_meanspec_fd_mean,
 FunctionalMeanBandPlot(fd_means = gabbiani_meanspec_fd_mean,
                        fd_sds = gabbiani_meanspec_fd_sd,
                        my.main = "Medie Funzionali ± Sd Gabbiani",
-                       my.ylim = c(0,0.8),
+                       my.ylim = c(0,1),
                        my.lwd = 2,
                        my.xlab = "Frequenza",
                        my.ylab = "Ampiezza",
