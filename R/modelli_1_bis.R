@@ -25,11 +25,13 @@ gufi = gufi[-gufi_ids_exclude$x,]
 # with the inference
 # the peaks are at the first position only
 
-gufi_meanspec_amps = gufi_meanspec_amps[-1,]
-gabbiani_meanspec_amps = gabbiani_meanspec_amps[-1,]
+to_remove_indexes = c(1,2,3)
 
-gufi_meanspec_freqs = gufi_meanspec_freqs[-1]
-gabbiani_meanspec_freqs = gabbiani_meanspec_freqs[-1]
+gufi_meanspec_amps = gufi_meanspec_amps[-to_remove_indexes,]
+gabbiani_meanspec_amps = gabbiani_meanspec_amps[-to_remove_indexes,]
+
+gufi_meanspec_freqs = gufi_meanspec_freqs[-to_remove_indexes]
+gabbiani_meanspec_freqs = gabbiani_meanspec_freqs[-to_remove_indexes]
 
 # save(
 #   falchi,
@@ -1562,8 +1564,12 @@ cv_fanova_res_falchi = CvFunctionalANOVA(factor = falchi$Climate_zone,
                   coef_y = falchi_meanspec_fd$coefs,
                   y_names = falchi_meanspec_fd_diff$fdnames,
                   basis_beta = falchi_meanspec_fd_diff$basis,
-                  lambda_grid = 1:5,
+                  lambda_grid = 10^seq(-4, 0, by = 1),
                   nfold = 5)
+
+save(cv_fanova_res_falchi,
+     file = "results/prima_parte/outputs/cv_fanova_res_falchi.RData")
+
 
 # fit model + beta se
 falchi_anova_model = ComputeBetaSd(factor = falchi$Climate_zone,
@@ -1619,6 +1625,9 @@ cv_fanova_res_gufi = CvFunctionalANOVA(factor = gufi$Climate_zone,
                                          lambda_grid = 10^seq(-4, 0, by = 0.5),
                                          nfold = 5)
 
+save(cv_fanova_res_gufi,
+     file = "results/prima_parte/outputs/cv_fanova_res_gufi.RData")
+
 # fit model + beta se
 gufi_anova_model = ComputeBetaSd(factor = gufi$Climate_zone,
                                    X = gufi_meanspec_amps,
@@ -1672,6 +1681,9 @@ cv_fanova_res_gabbiani = CvFunctionalANOVA(factor = gabbiani$Cluster,
                                        basis_beta = gabbiani_meanspec_fd_diff$basis,
                                        lambda_grid = 10^seq(-4, 0, by = 0.5),
                                        nfold = 5)
+
+save(cv_fanova_res_gabbiani,
+     file = "results/prima_parte/outputs/cv_fanova_res_gabbiani.RData")
 
 gc()
 
