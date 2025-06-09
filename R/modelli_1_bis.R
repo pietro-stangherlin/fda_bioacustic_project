@@ -7,7 +7,26 @@ library(plotly)
 library(tidyverse)
 library(quadprog)
 
+library(Rcpp)
+library(RcppParallel)
+
 rm(list = ls())
+
+sourceCpp("src/kron_helper.cpp")
+
+# A <- matrix(rnorm(4*6), 4, 6)
+# B <- matrix(rnorm(2*3), 2, 3)
+# C <- matrix(rnorm(6*2), 6, 2)
+# res <- KroneckerProdByBlocks(A, B, C)
+# 
+# 
+# library(microbenchmark)
+# microbenchmark(
+#   serial = KroneckerProdByBlocks(A, B, C),
+#   parallel = KroneckerProdByBlocksParallel(A, B, C),
+#   times = 10
+# )
+
 
 
 # >> Data Reading ---------------------------------
@@ -478,6 +497,11 @@ GCV_DifferentialSmoothBasis <- function(
 # >> ANOVA functions -------------------------------------
 
 
+# helper: use more time but less resources
+# avoiding saving explicitly the kronecker(B, C)
+# compute A %*% (kronecker(B, C))
+
+
 # Funzione per scegliere lambda ottimo per basi di beta
 
 # copied from fda library
@@ -620,6 +644,220 @@ CvFunctionalANOVA = function(
 }
 
 
+# taken from fda 
+My.fRegress.stderr = function (y, y2cMap, SigmaE, returnMatrix = FALSE, ...) 
+{
+  yfdobj <- y$yfdobj
+  xfdlist <- y$xfdlist
+  betalist <- y$betalist
+  betaestlist <- y$betaestlist
+  yhatfdobj <- y$yhatfdobj
+  Cmat <- y$Cmat
+  Dmat <- y$Dmat
+  Cmatinv <- y$Cmatinv
+  wt <- y$wt
+  df <- y$df
+  betastderrlist <- y$betastderrlist
+  YhatStderr <- y$YhatStderr
+  Bvar <- y$Bvar
+  c2bMap <- y$c2bMap
+  p <- length(xfdlist)
+  ncoef <- 0
+  for (j in 1:p) {
+    betaParfdj <- betalist[[j]]
+    ncoefj <- betaParfdj$fd$basis$nbasis
+    ncoef <- ncoef + ncoefj
+  }
+  if (inherits(yfdobj, "fdPar") || inherits(yfdobj, "fd")) {
+    if (inherits(yfdobj, "fdPar")) 
+      yfdobj <- yfdobj$fd
+    N <- dim(yfdobj$coefs)[2]
+    ybasisobj <- yfdobj$basis
+    rangeval <- ybasisobj$rangeval
+    ynbasis <- ybasisobj$nbasis
+    ninteg <- max(501, 10 * ynbasis + 1)
+    tinteg <- seq(rangeval[1], rangeval[2], len = ninteg)
+    deltat <- tinteg[2] - tinteg[1]
+    ybasismat <- eval.basis(tinteg, ybasisobj, 0, returnMatrix)
+    basisprodmat <- matrix(0, ncoef, ynbasis * N)
+    mj2 <- 0
+    for (j in 1:p) {
+      betafdParj <- betalist[[j]]
+      betabasisj <- betafdParj$fd$basis
+      ncoefj <- betabasisj$nbasis
+      bbasismatj <- eval.basis(tinteg, betabasisj, 0, 
+                               returnMatrix)
+      xfdj <- xfdlist[[j]]
+      tempj <- eval.fd(tinteg, xfdj, 0, returnMatrix)
+      mj1 <- mj2 + 1
+      mj2 <- mj2 + ncoefj
+      indexj <- mj1:mj2
+      mk2 <- 0
+      for (k in 1:ynbasis) {
+        mk1 <- mk2 + 1
+        mk2 <- mk2 + N
+        indexk <- mk1:mk2
+        tempk <- bbasismatj * ybasismat[, k]
+        basisprodmat[indexj, indexk] <- deltat * crossprod(tempk, 
+                                                           tempj)
+      }
+    }
+    y2cdim <- dim(y2cMap)
+    if (y2cdim[1] != ynbasis || y2cdim[2] != dim(SigmaE)[1]) 
+      stop("Dimensions of Y2CMAP not correct.")
+    Varc <- y2cMap %*% SigmaE %*% t(y2cMap)
+    print("[DEBUG]: dim(Varc) = ")
+    print(dim(Varc))
+    
+    C2BMap <- Cmatinv %*% basisprodmat
+    
+    print("[DEBUG]: dim(C2BMap) = ")
+    print(dim(C2BMap))
+    
+    # this causes memory problems, it's to big
+    # CVar <- kronecker(Varc, diag(rep(1, N)))
+    # 
+
+    # Bvar <- C2BMap %*% CVar %*% t(C2BMap)
+    
+    Bvar <- KroneckerProdByBlocksParallel(C2BMap, Varc, diag(rep(1, N))) %*% t(C2BMap)
+    
+    print("[DEBUG]: Bvar with Kronecker computed!")
+    
+    nplot <- max(51, 10 * ynbasis + 1)
+    tplot <- seq(rangeval[1], rangeval[2], len = nplot)
+    betastderrlist <- vector("list", p)
+    PsiMatlist <- vector("list", p)
+    mj2 <- 0
+    for (j in 1:p) {
+      betafdParj <- betalist[[j]]
+      betabasisj <- betafdParj$fd$basis
+      ncoefj <- betabasisj$nbasis
+      mj1 <- mj2 + 1
+      mj2 <- mj2 + ncoefj
+      indexj <- mj1:mj2
+      bbasismat <- eval.basis(tplot, betabasisj, 0, returnMatrix)
+      PsiMatlist <- bbasismat
+      bvarj <- Bvar[indexj, indexj]
+      bstderrj <- sqrt(diag(bbasismat %*% bvarj %*% t(bbasismat)))
+      bstderrfdj <- smooth.basis(tplot, bstderrj, betabasisj)$fd
+      betastderrlist[[j]] <- bstderrfdj
+    }
+    YhatStderr <- matrix(0, nplot, N)
+    B2YhatList <- vector("list", p)
+    for (iplot in 1:nplot) {
+      YhatVari <- matrix(0, N, N)
+      tval <- tplot[iplot]
+      for (j in 1:p) {
+        Zmat <- eval.fd(tval, xfdlist[[j]])
+        betabasisj <- betalist[[j]]$fd$basis
+        PsiMatj <- eval.basis(tval, betabasisj)
+        B2YhatMapij <- t(Zmat) %*% PsiMatj
+        B2YhatList[[j]] <- B2YhatMapij
+      }
+      m2j <- 0
+      for (j in 1:p) {
+        m1j <- m2j + 1
+        m2j <- m2j + betalist[[j]]$fd$basis$nbasis
+        B2YhatMapij <- B2YhatList[[j]]
+        m2k <- 0
+        for (k in 1:p) {
+          m1k <- m2k + 1
+          m2k <- m2k + betalist[[k]]$fd$basis$nbasis
+          B2YhatMapik <- B2YhatList[[k]]
+          YhatVari <- YhatVari + B2YhatMapij %*% Bvar[m1j:m2j, 
+                                                      m1k:m2k] %*% t(B2YhatMapik)
+        }
+      }
+      YhatStderr[iplot, ] <- matrix(sqrt(diag(YhatVari)), 
+                                    1, N)
+    }
+  }
+  else {
+    ymat <- as.matrix(yfdobj)
+    N <- dim(ymat)[1]
+    Zmat <- NULL
+    for (j in 1:p) {
+      xfdj <- xfdlist[[j]]
+      if (inherits(xfdj, "fd")) {
+        xcoef <- xfdj$coefs
+        xbasis <- xfdj$basis
+        betafdParj <- betalist[[j]]
+        bbasis <- betafdParj$fd$basis
+        Jpsithetaj <- inprod(xbasis, bbasis)
+        Zmat <- cbind(Zmat, t(xcoef) %*% Jpsithetaj)
+      }
+      else if (inherits(xfdj, "numeric")) {
+        Zmatj <- xfdj
+        Zmat <- cbind(Zmat, Zmatj)
+      }
+    }
+    c2bMap <- Cmatinv %*% t(Zmat)
+    y2bmap <- c2bMap
+    Bvar <- y2bmap %*% as.matrix(SigmaE) %*% t(y2bmap)
+    betastderrlist <- vector("list", p)
+    mj2 <- 0
+    for (j in 1:p) {
+      betafdParj <- betalist[[j]]
+      betabasisj <- betafdParj$fd$basis
+      ncoefj <- betabasisj$nbasis
+      mj1 <- mj2 + 1
+      mj2 <- mj2 + ncoefj
+      indexj <- mj1:mj2
+      bvarj <- Bvar[indexj, indexj]
+      xfdj <- xfdlist[[j]]
+      if (inherits(xfdj, "fd")) {
+        betarng <- betabasisj$rangeval
+        ninteg <- max(c(501, 10 * ncoefj + 1))
+        tinteg <- seq(betarng[1], betarng[2], len = ninteg)
+        bbasismat <- eval.basis(tinteg, betabasisj, 
+                                0, returnMatrix)
+        bstderrj <- sqrt(diag(bbasismat %*% bvarj %*% 
+                                t(bbasismat)))
+        bstderrfdj <- smooth.basis(tinteg, bstderrj, 
+                                   betabasisj)$fd
+      }
+      else {
+        bsterrj <- sqrt(diag(bvarj))
+        onebasis <- create.constant.basis(betabasisj$rangeval)
+        bstderrfdj <- fd(t(bstderrj), onebasis)
+      }
+      betastderrlist[[j]] <- bstderrfdj
+    }
+    B2YhatList <- vector("list", p)
+    YhatVari <- matrix(0, N, N)
+    for (j in 1:p) {
+      betabasisj <- betalist[[j]]$fd$basis
+      Xfdj <- xfdlist[[j]]
+      B2YhatMapij <- inprod(Xfdj, betabasisj)
+      B2YhatList[[j]] <- B2YhatMapij
+    }
+    m2j <- 0
+    for (j in 1:p) {
+      m1j <- m2j + 1
+      m2j <- m2j + betalist[[j]]$fd$basis$nbasis
+      B2YhatMapij <- B2YhatList[[j]]
+      m2k <- 0
+      for (k in 1:p) {
+        m1k <- m2k + 1
+        m2k <- m2k + betalist[[k]]$fd$basis$nbasis
+        B2YhatMapik <- B2YhatList[[k]]
+        YhatVari <- YhatVari + B2YhatMapij %*% Bvar[m1j:m2j, 
+                                                    m1k:m2k] %*% t(B2YhatMapik)
+      }
+    }
+    YhatStderr <- matrix(sqrt(diag(YhatVari)), N, 1)
+  }
+  fRegressList <- list(yfdobj = y$yfdobj, xfdlist = y$xfdlist, 
+                       betalist = y$betalist, betaestlist = y$betaestlist, 
+                       yhatfdobj = y$yhatfdobj, Cmat = y$Cmat, Dmat = y$Dmat, 
+                       Cmatinv = y$Cmatinv, wt = y$wt, df = y$df, y2cMap = y2cMap, 
+                       SigmaE = SigmaE, betastderrlist = betastderrlist, YhatStderr = YhatStderr, 
+                       Bvar = Bvar, c2bMap = c2bMap)
+  class(fRegressList) = "fRegress"
+  return(fRegressList)
+}
+
 ComputeBetaSd = function(factor,
                          X,
                          dom,
@@ -652,12 +890,14 @@ ComputeBetaSd = function(factor,
   
   m1 = fRegress(yfd, xlist, betalist)
   
+  
   # compute functional standard errors
   # NOTE: change yfd with another basis system for errors 
   SigmaE = diag(apply(eval.fd(dom, yfd), 1, var))
   
+  
   return(list("model" = m1,
-              "beta_se" = fRegress.stderr(
+              "beta_se" = My.fRegress.stderr(
                 m1,
                 smooth.basis(dom, X, basis_y)$y2cMap,
                 SigmaE)
@@ -1379,6 +1619,11 @@ par(mfrow = c(1,1))
 
 dev.off()
 
+# .. Save image ----------------------------
+gc()
+save.image(file = "results/prima_parte/outputs/basis_selection_work_space.RData")
+load("results/prima_parte/outputs/basis_selection_work_space.RData")
+
 # >>f Means ---------------------------------
 
 # ╭──────╮
@@ -1569,6 +1814,8 @@ cv_fanova_res_falchi = CvFunctionalANOVA(factor = falchi$Climate_zone,
 
 save(cv_fanova_res_falchi,
      file = "results/prima_parte/outputs/cv_fanova_res_falchi.RData")
+
+load("results/prima_parte/outputs/cv_fanova_res_falchi.RData")
 
 
 # fit model + beta se
