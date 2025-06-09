@@ -1,8 +1,9 @@
 // [[Rcpp::depends(RcppParallel)]]
-#include <Rcpp.h>
 #include <RcppParallel.h>
+#include<Rcpp>
 using namespace Rcpp;
 using namespace RcppParallel;
+
 
 // [[Rcpp::export]]
 NumericMatrix KroneckerProdByBlocks(const NumericMatrix& A,
@@ -23,6 +24,7 @@ NumericMatrix KroneckerProdByBlocks(const NumericMatrix& A,
   int col_idx = 0;
   
   for (int jB = 0; jB < ncolB; ++jB) {
+    
     for (int jC = 0; jC < ncolC; ++jC) {
       // Construct right vector of size nrowB * nrowC
       NumericVector right(nrowB * nrowC);
@@ -43,6 +45,11 @@ NumericMatrix KroneckerProdByBlocks(const NumericMatrix& A,
       }
       
       col_idx++;
+      
+      if (col_idx % 100 == 0) {
+        Rcpp::checkUserInterrupt();
+        Rcpp::Rcout << "Processed column " << col_idx << std::endl;
+      }
     }
   }
   

@@ -9,10 +9,12 @@ library(quadprog)
 
 library(Rcpp)
 library(RcppParallel)
+library(RcppArmadillo)
 
 rm(list = ls())
 
-sourceCpp("src/kron_helper.cpp")
+# sourceCpp("src/kron_helper.cpp")
+sourceCpp("src/bvar_kron.cpp")
 
 # A <- matrix(rnorm(4*6), 4, 6)
 # B <- matrix(rnorm(2*3), 2, 3)
@@ -720,7 +722,11 @@ My.fRegress.stderr = function (y, y2cMap, SigmaE, returnMatrix = FALSE, ...)
 
     # Bvar <- C2BMap %*% CVar %*% t(C2BMap)
     
-    Bvar <- KroneckerProdByBlocksParallel(C2BMap, Varc, diag(rep(1, N))) %*% t(C2BMap)
+    # Bvar <- KroneckerProdByBlocksParallel(C2BMap, Varc, diag(rep(1, N))) %*% t(C2BMap)
+    
+    # Bvar <- KroneckerProdByBlocks(C2BMap, Varc, diag(rep(1, N))) %*% t(C2BMap)
+    
+    Bvar <- ComputeBvar(C2BMap, Varc, diag(rep(1, N)))
     
     print("[DEBUG]: Bvar with Kronecker computed!")
     
@@ -1874,6 +1880,7 @@ cv_fanova_res_gufi = CvFunctionalANOVA(factor = gufi$Climate_zone,
 
 save(cv_fanova_res_gufi,
      file = "results/prima_parte/outputs/cv_fanova_res_gufi.RData")
+load("results/prima_parte/outputs/cv_fanova_res_gufi.RData")
 
 # fit model + beta se
 gufi_anova_model = ComputeBetaSd(factor = gufi$Climate_zone,
@@ -1931,6 +1938,7 @@ cv_fanova_res_gabbiani = CvFunctionalANOVA(factor = gabbiani$Cluster,
 
 save(cv_fanova_res_gabbiani,
      file = "results/prima_parte/outputs/cv_fanova_res_gabbiani.RData")
+load("results/prima_parte/outputs/cv_fanova_res_gabbiani.RData")
 
 gc()
 
