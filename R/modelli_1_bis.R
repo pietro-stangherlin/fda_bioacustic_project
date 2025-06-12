@@ -2285,8 +2285,8 @@ gc()
 #                                         matrix(2:5, 2, 2)))
 
 
-PlotBetaWithQuantiles(original_fit = gabbiani_bs_beta$original_fit_beta,
-                      quantile_betas = gabbiani_bs_beta$quantile_betas,
+PlotBetaWithQuantiles(original_fit = boot_fanova_beta_gabbiani$original_fit_beta,
+                      quantile_betas = boot_fanova_beta_gabbiani$quantile_betas,
                       my.name = "Gabbiani",
                       save_path = "results/prima_parte/images/f_beta_quant_gabbiani.png",
                       my.width = MY.WIDTH,
