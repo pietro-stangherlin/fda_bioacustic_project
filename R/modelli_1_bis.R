@@ -1012,7 +1012,7 @@ BootBetaIC = function(B, # bootstrap replicates
                       X = X[,b_sample_indexes],
                       dom = dom,
                       basis_y = basis_y,
-                      coef_y = coef_y,
+                      coef_y = coef_y[, b_sample_indexes],
                       y_names = y_names,
                       basis_beta = basis_beta,
                       lambda = lambda)$betaestlist
@@ -1946,7 +1946,7 @@ save(cv_fanova_res_falchi,
      file = "results/prima_parte/outputs/cv_fanova_res_falchi.RData")
 
 
-falchi_bs_beta = BootBetaIC(B = 10,
+falchi_bs_beta = BootBetaIC(B = 30,
                             factor = falchi$Climate_zone,
                             X = falchi_meanspec_amps,
                             dom = falchi_meanspec_freqs,
