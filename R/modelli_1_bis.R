@@ -987,7 +987,7 @@ BootBetaIC = function(B, # bootstrap replicates
   
   for(b in 1:B){
     
-    if((b %% 1) == 0){
+    if((b %% 100) == 0){
       cat(b)
       cat("\n")
     }
@@ -2161,7 +2161,7 @@ save(cv_fanova_res_gufi,
 
 gc()
 
-gufi_bs_beta = BootBetaIC(B = 1000,
+boot_fanova_beta_gufi = BootBetaIC(B = 1000,
                             factor = gufi$Climate_zone,
                             X = gufi_meanspec_amps,
                             dom = gufi_meanspec_freqs,
@@ -2235,7 +2235,7 @@ save(cv_fanova_res_gabbiani,
 gc()
 
 
-gabbiani_bs_beta = BootBetaIC(B = 1000,
+boot_fanova_beta_gabbiani = BootBetaIC(B = 1000,
                           factor = gabbiani$Cluster,
                           X = gabbiani_meanspec_amps,
                           dom = gabbiani_meanspec_freqs,
