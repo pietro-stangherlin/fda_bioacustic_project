@@ -1029,7 +1029,40 @@ BootBetaIC = function(B, # bootstrap replicates
     
   }
   
-  return(beta_boot_array)
+  
+  # (non-bootstrapped) fit
+  original_fit_beta = FitANOVAConstrast(factor = factor,
+                                        X = X,
+                                        dom = dom,
+                                        basis_y = basis_y,
+                                        coef_y = coef_y,
+                                        y_names = y_names,
+                                        basis_beta = basis_beta,
+                                        lambda = lambda)$betaestlist
+  
+  
+  # 2. save quantiles as functional object to plotting
+  quantile_betas = list()
+  
+  for(i in 1:dim(beta_boot_array)[3]){  # over intercept and factors
+    quantile_betas[[i]] = list()
+    for(q in my.quantiles){
+      
+      # splines coefs quantile for each basis function
+      quant_coefs = apply(beta_boot_array[,,i], 1, quantile, probs = q)
+      quant_coefs = matrix(quant_coefs, nrow = basis_beta$nbasis, ncol = 1)
+      
+      quantile_betas[[i]][[as.character(q)]] = fd(coef = quant_coefs,
+                                                  basisobj = basis_beta)
+    }
+  }
+  
+  names(quantile_betas) = c("intercept", levels(factor))
+  
+  return(list(
+    "original_fit_beta" = original_fit_beta,
+    "quantile_betas" = quantile_betas
+  ))
   
 }
 
@@ -1176,6 +1209,93 @@ FunctionalMeanBandPlot = function(fd_means,
     dev.off()
   }
 }
+
+
+PlotBetaWithQuantiles <- function(original_fit,
+                                  quantile_betas,
+                                  my.name,
+                                  n_points = 500,
+                                  col_main = "black",
+                                  col_quant = "black",
+                                  lwd_main = 2,
+                                  lwd_quant = 2,
+                                  lty_quant = 2,
+                                  save_path = NULL,
+                                  my.width = 600,
+                                  my.height = 350,
+                                  my.layout.matr = cbind(matrix(1, 2, 2),
+                                                         matrix(2:5, 2, 2))) {
+  
+  
+  if(!is.null(save_path)){
+    png(save_path,
+        width = my.width,
+        height = my.height)
+  }
+  
+  graphics::layout(mat = my.layout.matr)
+  
+  # common basis
+  basis_beta = quantile_betas[[1]][[1]][[2]]
+  
+  eval_points <- seq(basis_beta$rangeval[1],
+                     basis_beta$rangeval[2],
+                     length.out = n_points)
+  
+  # Loop over all beta functions (intercept and factors)
+  for (i in seq_along(original_fit)) {
+    
+    
+    # Evaluate original beta
+    main_vals <- eval.fd(eval_points, original_fit[[i]]$fd)
+    
+    # Evaluate quantiles
+    quant_list <- quantile_betas[[i]]
+    lower_vals <- eval.fd(eval_points, quant_list[[1]])  # e.g. 0.025
+    upper_vals <- eval.fd(eval_points, quant_list[[2]])  # e.g. 0.975
+    
+    # Y-axis range
+    y_min <- min(lower_vals)
+    y_max <- max(upper_vals)
+    
+    # Set plot title
+    beta_name <- names(quantile_betas)[i]
+    
+    # Plot
+    plot(eval_points, main_vals, type = "l",
+         ylim = c(y_min, y_max),
+         lwd = lwd_main,
+         col = col_main,
+         main = paste(my.name, " : ", beta_name),
+         xlab = "Frequency", ylab = "Beta(f)")
+    
+    # Add quantile bounds
+    lines(eval_points, lower_vals, col = col_quant, lty = lty_quant,
+          lwd = lwd_quant)
+    lines(eval_points, upper_vals, col = col_quant, lty = lty_quant,
+          lwd = lwd_quant)
+    
+    abline(h = 0, lty = 2)
+    
+    # intercept
+    if(i == 1){
+      legend("topright", legend = c("Mean", "Quantiles"),
+             col = c(col_main, col_quant),
+             lwd = c(lwd_main, 1),
+             lty = c(1, lty_quant),
+             bty = "n")
+    }
+    }
+    
+
+  
+  if(!is.null(save_path)){
+    dev.off()
+  }
+  
+  par(mfrow = c(1, 1))
+}
+
 
 
 fANOVABetaSdPlot = function(my.betaestlist,
@@ -1946,7 +2066,7 @@ save(cv_fanova_res_falchi,
      file = "results/prima_parte/outputs/cv_fanova_res_falchi.RData")
 
 
-falchi_bs_beta = BootBetaIC(B = 30,
+falchi_bs_beta = BootBetaIC(B = 1000,
                             factor = falchi$Climate_zone,
                             X = falchi_meanspec_amps,
                             dom = falchi_meanspec_freqs,
@@ -1956,30 +2076,20 @@ falchi_bs_beta = BootBetaIC(B = 30,
                             basis_beta = falchi_meanspec_fd_diff$basis,
                             lambda = 0.01,
                             n_discrete = 500)
-dim(falchi_bs_beta)
 
-
-# beta_j
-plot(1:125,
-     apply(falchi_bs_beta[,,2], 1, function(row) quantile(row, 0.025)),
-     type = "l",
-     ylim = c(-0.5,0.5),
-     col = "blue")
-
-lines(1:125,
-      apply(falchi_bs_beta[,,2], 1, function(row) quantile(row, 0.975)),
-      col = "red")
+save(boot_fanova_beta_falchi,
+     file = "results/prima_parte/outputs/boot_fanova_beta_falchi.RData")
 
 
 # fit model + beta se
-falchi_anova_model = ComputeBetaSd(factor = falchi$Climate_zone,
-                               X = falchi_meanspec_amps,
-                               dom = falchi_meanspec_freqs,
-                               basis_y = falchi_meanspec_fd$basis,
-                               coef_y = falchi_meanspec_fd$coefs,
-                               y_names = falchi_meanspec_fd_diff$fdnames,
-                               basis_beta = falchi_meanspec_fd_diff$basis,
-                               lambda = cv_fanova_res_falchi$lambda_min)
+# falchi_anova_model = ComputeBetaSd(factor = falchi$Climate_zone,
+#                                X = falchi_meanspec_amps,
+#                                dom = falchi_meanspec_freqs,
+#                                basis_y = falchi_meanspec_fd$basis,
+#                                coef_y = falchi_meanspec_fd$coefs,
+#                                y_names = falchi_meanspec_fd_diff$fdnames,
+#                                basis_beta = falchi_meanspec_fd_diff$basis,
+#                                lambda = cv_fanova_res_falchi$lambda_min)
 
 gc()
 
@@ -1998,16 +2108,26 @@ perm_fanova_res_falchi = PermutFANOVA(factor = falchi$Climate_zone,
 gc()
 
 
-fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
-                 my.betastderrlist = falchi_anova_model$beta_se$betastderrlist,
-                 my.factor = falchi$Climate_zone,
-                 my.name = "Falchi",
-                 save_path = "results/prima_parte/images/f_beta_falchi.png",
-                 my.width = MY.WIDTH,
-                 my.height = MY.HEIGHT,
-                 my.layout.matr = cbind(matrix(1, 2, 2),
-                                        matrix(2:5, 2, 2)))
+# fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
+#                  my.betastderrlist = falchi_anova_model$beta_se$betastderrlist,
+#                  my.factor = falchi$Climate_zone,
+#                  my.name = "Falchi",
+#                  save_path = "results/prima_parte/images/f_beta_falchi.png",
+#                  my.width = MY.WIDTH,
+#                  my.height = MY.HEIGHT,
+#                  my.layout.matr = cbind(matrix(1, 2, 2),
+#                                         matrix(2:5, 2, 2)))
 
+
+
+PlotBetaWithQuantiles(original_fit = falchi_bs_beta$original_fit_beta,
+                      quantile_betas = falchi_bs_beta$quantile_betas,
+                      my.name = "Falchi",
+                      save_path = "results/prima_parte/images/f_beta_quant_falchi.png",
+                      my.width = MY.WIDTH,
+                      my.height = MY.HEIGHT,
+                      my.layout.matr = cbind(matrix(1, 2, 2),
+                                             matrix(2:5, 2, 2)))
 
 # ╭────╮
 # │Gufi│ ----------------------------------------------------------
@@ -2030,16 +2150,30 @@ save(cv_fanova_res_gufi,
 
 
 # fit model + beta se
-gufi_anova_model = ComputeBetaSd(factor = gufi$Climate_zone,
-                                   X = gufi_meanspec_amps,
-                                   dom = gufi_meanspec_freqs,
-                                   basis_y = gufi_meanspec_fd_diff$basis,
-                                   coef_y = gufi_meanspec_fd_diff$coefs,
-                                   y_names = gufi_meanspec_fd_diff$fdnames,
-                                   basis_beta = gufi_meanspec_fd_diff$basis,
-                                   lambda = cv_fanova_res_gufi$lambda_min)
+# gufi_anova_model = ComputeBetaSd(factor = gufi$Climate_zone,
+#                                    X = gufi_meanspec_amps,
+#                                    dom = gufi_meanspec_freqs,
+#                                    basis_y = gufi_meanspec_fd_diff$basis,
+#                                    coef_y = gufi_meanspec_fd_diff$coefs,
+#                                    y_names = gufi_meanspec_fd_diff$fdnames,
+#                                    basis_beta = gufi_meanspec_fd_diff$basis,
+#                                    lambda = cv_fanova_res_gufi$lambda_min)
 
 gc()
+
+gufi_bs_beta = BootBetaIC(B = 1000,
+                            factor = gufi$Climate_zone,
+                            X = gufi_meanspec_amps,
+                            dom = gufi_meanspec_freqs,
+                            basis_y = gufi_meanspec_fd$basis,
+                            coef_y = gufi_meanspec_fd$coefs,
+                            y_names = gufi_meanspec_fd_diff$fdnames,
+                            basis_beta = gufi_meanspec_fd_diff$basis,
+                            lambda = cv_fanova_res_gufi$lambda_min,
+                            n_discrete = 500)
+
+save(boot_fanova_beta_gufi,
+     file = "results/prima_parte/outputs/boot_fanova_beta_gufi.RData")
 
 # ftest
 perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
@@ -2056,16 +2190,25 @@ perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
 gc()
 
 
-fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
-                 my.betastderrlist = gufi_anova_model$beta_se$betastderrlist,
-                 my.factor = gufi$Climate_zone,
-                 my.name = "Gufi",
-                 save_path = "results/prima_parte/images/f_beta_gufi.png",
-                 my.width = MY.WIDTH,
-                 my.height = MY.HEIGHT,
-                 my.layout.matr = cbind(matrix(1, 2, 2),
-                                        matrix(2:5, 2, 2)))
+# fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
+#                  my.betastderrlist = gufi_anova_model$beta_se$betastderrlist,
+#                  my.factor = gufi$Climate_zone,
+#                  my.name = "Gufi",
+#                  save_path = "results/prima_parte/images/f_beta_gufi.png",
+#                  my.width = MY.WIDTH,
+#                  my.height = MY.HEIGHT,
+#                  my.layout.matr = cbind(matrix(1, 2, 2),
+#                                         matrix(2:5, 2, 2)))
 
+
+PlotBetaWithQuantiles(original_fit = gufi_bs_beta$original_fit_beta,
+                      quantile_betas = gufi_bs_beta$quantile_betas,
+                      my.name = "Gufi",
+                      save_path = "results/prima_parte/images/f_beta_quant_gufi.png",
+                      my.width = MY.WIDTH,
+                      my.height = MY.HEIGHT,
+                      my.layout.matr = cbind(matrix(1, 2, 2),
+                                             matrix(2:5, 2, 2)))
 
 
 
@@ -2091,15 +2234,30 @@ save(cv_fanova_res_gabbiani,
 
 gc()
 
+
+gabbiani_bs_beta = BootBetaIC(B = 1000,
+                          factor = gabbiani$Cluster,
+                          X = gabbiani_meanspec_amps,
+                          dom = gabbiani_meanspec_freqs,
+                          basis_y = gabbiani_meanspec_fd$basis,
+                          coef_y = gabbiani_meanspec_fd$coefs,
+                          y_names = gabbiani_meanspec_fd_diff$fdnames,
+                          basis_beta = gabbiani_meanspec_fd_diff$basis,
+                          lambda = cv_fanova_res_gabbiani$lambda_min,
+                          n_discrete = 500)
+
+save(boot_fanova_beta_gabbiani,
+     file = "results/prima_parte/outputs/boot_fanova_beta_gabbiani.RData")
+
 # fit model + beta se
-gabbiani_anova_model = ComputeBetaSd(factor = gabbiani$Cluster,
-                                 X = gabbiani_meanspec_amps,
-                                 dom = gabbiani_meanspec_freqs,
-                                 basis_y = gabbiani_meanspec_fd_diff$basis,
-                                 coef_y = gabbiani_meanspec_fd_diff$coefs,
-                                 y_names = gabbiani_meanspec_fd_diff$fdnames,
-                                 basis_beta = gabbiani_meanspec_fd_diff$basis,
-                                 lambda = cv_fanova_res_gabbiani$lambda_min)
+# gabbiani_anova_model = ComputeBetaSd(factor = gabbiani$Cluster,
+#                                  X = gabbiani_meanspec_amps,
+#                                  dom = gabbiani_meanspec_freqs,
+#                                  basis_y = gabbiani_meanspec_fd_diff$basis,
+#                                  coef_y = gabbiani_meanspec_fd_diff$coefs,
+#                                  y_names = gabbiani_meanspec_fd_diff$fdnames,
+#                                  basis_beta = gabbiani_meanspec_fd_diff$basis,
+#                                  lambda = cv_fanova_res_gabbiani$lambda_min)
 
 # ftest
 perm_fanova_res_gabbiani = PermutFANOVA(factor = gabbiani$Cluster,
@@ -2116,15 +2274,25 @@ perm_fanova_res_gabbiani = PermutFANOVA(factor = gabbiani$Cluster,
 gc()
 
 
-fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
-                 my.betastderrlist = gabbiani_anova_model$beta_se$betastderrlist,
-                 my.factor = gabbiani$Cluster,
-                 my.name = "gabbiani",
-                 save_path = "results/prima_parte/images/f_beta_gabbiani.png",
-                 my.width = MY.WIDTH,
-                 my.height = MY.HEIGHT,
-                 my.layout.matr = cbind(matrix(1, 2, 2),
-                                        matrix(2:5, 2, 2)))
+# fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
+#                  my.betastderrlist = gabbiani_anova_model$beta_se$betastderrlist,
+#                  my.factor = gabbiani$Cluster,
+#                  my.name = "gabbiani",
+#                  save_path = "results/prima_parte/images/f_beta_gabbiani.png",
+#                  my.width = MY.WIDTH,
+#                  my.height = MY.HEIGHT,
+#                  my.layout.matr = cbind(matrix(1, 2, 2),
+#                                         matrix(2:5, 2, 2)))
+
+
+PlotBetaWithQuantiles(original_fit = gabbiani_bs_beta$original_fit_beta,
+                      quantile_betas = gabbiani_bs_beta$quantile_betas,
+                      my.name = "Gabbiani",
+                      save_path = "results/prima_parte/images/f_beta_quant_gabbiani.png",
+                      my.width = MY.WIDTH,
+                      my.height = MY.HEIGHT,
+                      my.layout.matr = cbind(matrix(1, 2, 2),
+                                             matrix(2:5, 2, 2)))
 
 # .. joint plot -----------------------------
 
