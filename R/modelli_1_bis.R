@@ -54,6 +54,9 @@ gabbiani_meanspec_amps = gabbiani_meanspec_amps[-to_remove_indexes,]
 gufi_meanspec_freqs = gufi_meanspec_freqs[-to_remove_indexes]
 gabbiani_meanspec_freqs = gabbiani_meanspec_freqs[-to_remove_indexes]
 
+load("results/prima_parte/outputs/basis_selection_work_space.RData")
+
+
 # save(
 #   falchi,
 #   falchi_meanspec_amps,
@@ -499,6 +502,45 @@ GCV_DifferentialSmoothBasis <- function(
 # >> ANOVA functions -------------------------------------
 
 
+# fit functional ANOVA
+# with group indexes j = 1,,,J
+# with constraint on zero sum for beta_j(t) for each t
+# i.e beta_1(t) + beta_2(t) + ... + beta_j(t) + .. + beta_J(t) = 0
+# for each t
+
+FitANOVAConstrast = function(factor,
+                             X,
+                             dom,
+                             basis_y,
+                             coef_y,
+                             y_names,
+                             basis_beta,
+                             lambda){
+  factor_matrix = cbind(1, model.matrix(~ -1 + factor))
+  yt = cbind(X, 0)
+  Xt = rbind(factor_matrix, c(0, rep(1, length(levels(factor)))))
+  
+  
+  B = cbind(coef_y, 0) # constraint
+  yfd = fd(B, basis_y, y_names)
+  
+  xlist = lapply(
+    1:NCOL(factor_matrix),
+    function(x) c(factor_matrix[, x], 1)
+  )
+  xlist[[1]][length(xlist[[1]])] = 0 # constraint
+  
+  betalist = lapply(
+    1:(length(levels(factor)) + 1),
+    function(x) fdPar(basis_beta, Lfdobj = int2Lfd(2), lambda = lambda)
+  )
+  # functional intercept
+  betalist[[1]] = fdPar(basis_beta, lambda = 0)
+  
+  return(fRegress(yfd, xlist, betalist))
+}
+
+
 # helper: use more time but less resources
 # avoiding saving explicitly the kronecker(B, C)
 # compute A %*% (kronecker(B, C))
@@ -912,6 +954,86 @@ ComputeBetaSd = function(factor,
   
 }
 
+# non parametric bootstrap beta IC
+# for each (stratified by group) bootstrap sample
+# estimate beta_j(f) for each group j,
+# discretize its values on a grid of {f_g} g = 1,,,,G
+# when all bootstrap iterations are finished
+# for each point on the grid take the wanted quantiles (ex. 0.025, 0.975)
+# and smooth them to get the functional beta 
+BootBetaIC = function(B, # bootstrap replicates
+                      factor,
+                      X,
+                      dom,
+                      basis_y,
+                      coef_y,
+                      y_names,
+                      basis_beta,
+                      lambda,
+                      n_discrete = 500, # number of discrete points, where to evaluate each beta
+                      my.quantiles = c(0.025, 0.975)){
+  
+  # domain points grid
+  # not used
+  eval_points = seq(min(dom), max(dom), length = n_discrete)
+  
+  # store the discretize points
+  beta_boot_array = array(NA,
+                          dim = c(basis_beta[["nbasis"]], # basis
+                                  B,
+                                  length(unique(factor)) + 1)) # intercept
+  
+  print(dim(beta_boot_array))
+  
+  for(b in 1:B){
+    
+    if((b %% 1) == 0){
+      cat(b)
+      cat("\n")
+    }
+    
+    
+    # computational inefficient, but not much problematic
+    b_sample_indexes = c()
+    
+    # get stratified bootstrap sample
+    for(fact in unique(factor)){
+      
+      factor_candidates_indexes = which(factor == fact)
+      
+      b_sample_indexes = c(b_sample_indexes,
+                           sample(factor_candidates_indexes,
+                                  size = length(factor_candidates_indexes),
+                                  replace = T))
+    }
+    
+    
+    temp_betaestlist = FitANOVAConstrast(factor = factor[b_sample_indexes],
+                      X = X[,b_sample_indexes],
+                      dom = dom,
+                      basis_y = basis_y,
+                      coef_y = coef_y,
+                      y_names = y_names,
+                      basis_beta = basis_beta,
+                      lambda = lambda)$betaestlist
+    
+    
+    # save beta values on the grid
+    # first intercept, then betas
+    for (i in 1:dim(beta_boot_array)[3]){
+      
+      beta_boot_array[,b,i] = temp_betaestlist[[i]]$fd$coefs
+      
+      
+    }
+    
+  }
+  
+  return(beta_boot_array)
+  
+}
+
+
 PermutFANOVA = function(factor,
                           X,
                           dom,
@@ -920,6 +1042,7 @@ PermutFANOVA = function(factor,
                           y_names,
                           basis_beta,
                           lambda,
+                          my.quantile = 0.95,
                           n_perm = 100,
                           seed = 123){
   
@@ -988,8 +1111,8 @@ PermutFANOVA = function(factor,
   
   return(list(
     "fobs" = fobs,
-    "qF" = apply(Fmatr, 2, quantile, .95),
-    "qFmax" = quantile(apply(Fmatr, 1, max), .95)
+    "qF" = apply(Fmatr, 2, quantile, my.quantile),
+    "qFmax" = quantile(apply(Fmatr, 1, max), .my.quantile)
   ))
   
 }
@@ -1628,7 +1751,6 @@ dev.off()
 # .. Save image ----------------------------
 gc()
 save.image(file = "results/prima_parte/outputs/basis_selection_work_space.RData")
-load("results/prima_parte/outputs/basis_selection_work_space.RData")
 
 # >>f Means ---------------------------------
 
@@ -1805,6 +1927,8 @@ dev.off()
 # │Falchi│------------------------------------
 # ╰──────╯
 
+load("results/prima_parte/outputs/cv_fanova_res_falchi.RData")
+
 set.seed(123)
 
 # select lambda 
@@ -1815,13 +1939,36 @@ cv_fanova_res_falchi = CvFunctionalANOVA(factor = falchi$Climate_zone,
                   coef_y = falchi_meanspec_fd$coefs,
                   y_names = falchi_meanspec_fd_diff$fdnames,
                   basis_beta = falchi_meanspec_fd_diff$basis,
-                  lambda_grid = 10^seq(-4, 0, by = 1),
+                  lambda_grid = 10^seq(-10, 2, by = 0.5),
                   nfold = 5)
 
 save(cv_fanova_res_falchi,
      file = "results/prima_parte/outputs/cv_fanova_res_falchi.RData")
 
-load("results/prima_parte/outputs/cv_fanova_res_falchi.RData")
+
+falchi_bs_beta = BootBetaIC(B = 10,
+                            factor = falchi$Climate_zone,
+                            X = falchi_meanspec_amps,
+                            dom = falchi_meanspec_freqs,
+                            basis_y = falchi_meanspec_fd$basis,
+                            coef_y = falchi_meanspec_fd$coefs,
+                            y_names = falchi_meanspec_fd_diff$fdnames,
+                            basis_beta = falchi_meanspec_fd_diff$basis,
+                            lambda = 0.01,
+                            n_discrete = 500)
+dim(falchi_bs_beta)
+
+
+# beta_j
+plot(1:125,
+     apply(falchi_bs_beta[,,2], 1, function(row) quantile(row, 0.025)),
+     type = "l",
+     ylim = c(-0.5,0.5),
+     col = "blue")
+
+lines(1:125,
+      apply(falchi_bs_beta[,,2], 1, function(row) quantile(row, 0.975)),
+      col = "red")
 
 
 # fit model + beta se
@@ -1862,11 +2009,11 @@ fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
                                         matrix(2:5, 2, 2)))
 
 
-
 # ╭────╮
 # │Gufi│ ----------------------------------------------------------
 # ╰────╯
 
+load("results/prima_parte/outputs/cv_fanova_res_gufi.RData")
 
 cv_fanova_res_gufi = CvFunctionalANOVA(factor = gufi$Climate_zone,
                                          X = gufi_meanspec_amps,
@@ -1875,12 +2022,12 @@ cv_fanova_res_gufi = CvFunctionalANOVA(factor = gufi$Climate_zone,
                                          coef_y = gufi_meanspec_fd_diff$coefs,
                                          y_names = gufi_meanspec_fd_diff$fdnames,
                                          basis_beta = gufi_meanspec_fd_diff$basis,
-                                         lambda_grid = 10^seq(-4, 0, by = 0.5),
+                                         lambda_grid = 10^seq(-10, 2, by = 0.5),
                                          nfold = 5)
 
 save(cv_fanova_res_gufi,
      file = "results/prima_parte/outputs/cv_fanova_res_gufi.RData")
-load("results/prima_parte/outputs/cv_fanova_res_gufi.RData")
+
 
 # fit model + beta se
 gufi_anova_model = ComputeBetaSd(factor = gufi$Climate_zone,
@@ -1926,6 +2073,8 @@ fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
 # │Gabbiani│ ------------------------------------------------------------------
 # ╰────────╯
 
+load("results/prima_parte/outputs/cv_fanova_res_gabbiani.RData")
+
 cv_fanova_res_gabbiani = CvFunctionalANOVA(factor = gabbiani$Cluster,
                                        X = gabbiani_meanspec_amps,
                                        dom = gabbiani_meanspec_freqs,
@@ -1933,12 +2082,12 @@ cv_fanova_res_gabbiani = CvFunctionalANOVA(factor = gabbiani$Cluster,
                                        coef_y = gabbiani_meanspec_fd_diff$coefs,
                                        y_names = gabbiani_meanspec_fd_diff$fdnames,
                                        basis_beta = gabbiani_meanspec_fd_diff$basis,
-                                       lambda_grid = 10^seq(-4, 0, by = 0.5),
+                                       lambda_grid = 10^seq(-10, 2, by = 0.5),
                                        nfold = 5)
 
 save(cv_fanova_res_gabbiani,
      file = "results/prima_parte/outputs/cv_fanova_res_gabbiani.RData")
-load("results/prima_parte/outputs/cv_fanova_res_gabbiani.RData")
+
 
 gc()
 
@@ -1980,11 +2129,12 @@ fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
 # .. joint plot -----------------------------
 
 #.. cv err ------
-par(mfrow = c(3, 1))
 
 
 png("results/prima_parte/images/f_anova_cv_err.png",
      width = MY.WIDTH, height = MY.HEIGHT)
+
+par(mfrow = c(3, 1))
 
 plot(cv_fanova_res_falchi$lambda_grid,
      cv_fanova_res_falchi$cv_error,
