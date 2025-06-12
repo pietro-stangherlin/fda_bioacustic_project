@@ -1145,7 +1145,7 @@ PermutFANOVA = function(factor,
   return(list(
     "fobs" = fobs,
     "qF" = apply(Fmatr, 2, quantile, my.quantile),
-    "qFmax" = quantile(apply(Fmatr, 1, max), .my.quantile)
+    "qFmax" = quantile(apply(Fmatr, 1, max), ,my.quantile)
   ))
   
 }
@@ -2101,8 +2101,8 @@ perm_fanova_res_falchi = PermutFANOVA(factor = falchi$Climate_zone,
                                       coef_y = falchi_meanspec_fd$coefs,
                                       y_names = falchi_meanspec_fd_diff$fdnames,
                                       basis_beta = falchi_meanspec_fd_diff$basis,
-                                      lambda = cv_fanova_res_falchi$lambda_min,
-                                      n_perm = 100,
+                                      lambda = 0.01,
+                                      n_perm = 1000,
                                       seed = 123)
 
 gc()
@@ -2184,7 +2184,7 @@ perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
                                       y_names = gufi_meanspec_fd_diff$fdnames,
                                       basis_beta = gufi_meanspec_fd_diff$basis,
                                       lambda = cv_fanova_res_gufi$lambda_min,
-                                      n_perm = 100,
+                                      n_perm = 1000,
                                       seed = 123)
 
 gc()
@@ -2268,7 +2268,7 @@ perm_fanova_res_gabbiani = PermutFANOVA(factor = gabbiani$Cluster,
                                     y_names = gabbiani_meanspec_fd_diff$fdnames,
                                     basis_beta = gabbiani_meanspec_fd_diff$basis,
                                     lambda = cv_fanova_res_gabbiani$lambda_min,
-                                    n_perm = 100,
+                                    n_perm = 1000,
                                     seed = 123)
 
 gc()
