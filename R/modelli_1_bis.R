@@ -1401,8 +1401,8 @@ MY.WIDTH = 1300
 MY.HEIGHT = 1300
 
 
-N_BOOT = 100
-N_PERM = 100
+N_BOOT = 1000
+N_PERM = 1000
 
 
 # >>Regularize fit via GCV -------------------
@@ -2161,7 +2161,7 @@ save(cv_fanova_res_falchi,
      file = "results/prima_parte/outputs/cv_fanova_res_falchi.RData")
 
 
-falchi_bs_beta = BootBetaIC(B = N_BOOT,
+boot_fanova_beta_falchi = BootBetaIC(B = N_BOOT,
                             factor = falchi$Climate_zone,
                             X = falchi_meanspec_amps,
                             dom = falchi_meanspec_freqs,
@@ -2214,8 +2214,8 @@ gc()
 
 
 
-PlotBetaWithQuantiles(original_fit = falchi_bs_beta$original_fit_beta,
-                      quantile_betas = falchi_bs_beta$quantile_betas,
+PlotBetaWithQuantiles(original_fit = boot_fanova_beta_falchi$original_fit_beta,
+                      quantile_betas = boot_fanova_beta_falchi$quantile_betas,
                       my.name = "Falchi",
                       save_path = "results/prima_parte/images/f_beta_quant_falchi.png",
                       my.width = MY.WIDTH,
