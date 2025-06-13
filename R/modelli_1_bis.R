@@ -1401,6 +1401,8 @@ MY.WIDTH = 1300
 MY.HEIGHT = 1300
 
 
+N_BOOT = 100
+N_PERM = 100
 
 
 # >>Regularize fit via GCV -------------------
@@ -2159,7 +2161,7 @@ save(cv_fanova_res_falchi,
      file = "results/prima_parte/outputs/cv_fanova_res_falchi.RData")
 
 
-falchi_bs_beta = BootBetaIC(B = 100,
+falchi_bs_beta = BootBetaIC(B = N_BOOT,
                             factor = falchi$Climate_zone,
                             X = falchi_meanspec_amps,
                             dom = falchi_meanspec_freqs,
@@ -2194,7 +2196,7 @@ perm_fanova_res_falchi = PermutFANOVA(factor = falchi$Climate_zone,
                                       y_names = falchi_meanspec_fd$fdnames,
                                       basis_beta = falchi_meanspec_fd$basis,
                                       lambda = cv_fanova_res_falchi$lambda_min,
-                                      n_perm = 100,
+                                      n_perm = N_PERM,
                                       seed = 123)
 
 gc()
@@ -2253,7 +2255,7 @@ save(cv_fanova_res_gufi,
 
 gc()
 
-boot_fanova_beta_gufi = BootBetaIC(B = 100,
+boot_fanova_beta_gufi = BootBetaIC(B = N_BOOT,
                             factor = gufi$Climate_zone,
                             X = gufi_meanspec_amps,
                             dom = gufi_meanspec_freqs,
@@ -2276,7 +2278,7 @@ perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
                                       y_names = gufi_meanspec_fd$fdnames,
                                       basis_beta = gufi_meanspec_fd$basis,
                                       lambda = cv_fanova_res_gufi$lambda_min,
-                                      n_perm = 100,
+                                      n_perm = N_PERM,
                                       seed = 123)
 
 gc()
@@ -2327,7 +2329,7 @@ save(cv_fanova_res_gabbiani,
 gc()
 
 
-boot_fanova_beta_gabbiani = BootBetaIC(B = 100,
+boot_fanova_beta_gabbiani = BootBetaIC(B = N_BOOT,
                           factor = gabbiani$Cluster,
                           X = gabbiani_meanspec_amps,
                           dom = gabbiani_meanspec_freqs,
@@ -2360,7 +2362,7 @@ perm_fanova_res_gabbiani = PermutFANOVA(factor = gabbiani$Cluster,
                                     y_names = gabbiani_meanspec_fd$fdnames,
                                     basis_beta = gabbiani_meanspec_fd$basis,
                                     lambda = cv_fanova_res_gabbiani$lambda_min,
-                                    n_perm = 100,
+                                    n_perm = N_PERM,
                                     seed = 123)
 
 gc()
@@ -2435,8 +2437,8 @@ plot(
   ylim = range(c(perm_fanova_res_falchi$fobs,perm_fanova_res_falchi$qFmax)),
   type = 'l',
   lwd = 2,
-  main = "Ftest Falchi",
-  xlab = "Frequenza",
+  main = paste0("Ftest Falchi", "; permutation number = ", N_PERM),
+  xlab = "Frequency",
   ylab = "F"
 )
 lines(falchi_meanspec_freqs, perm_fanova_res_falchi$qF,
@@ -2450,8 +2452,8 @@ plot(
   ylim = range(c(perm_fanova_res_gufi$fobs,perm_fanova_res_gufi$qFmax)),
   type = 'l',
   lwd = 2,
-  main = "Ftest Gufi",
-  xlab = "Frequenza",
+  main = paste0("Ftest Gufi", "; permutation number = ", N_PERM),
+  xlab = "Frequency",
   ylab = "F"
 )
 lines(gufi_meanspec_freqs, perm_fanova_res_gufi$qF,
@@ -2466,8 +2468,8 @@ plot(
   type = 'l',
   lwd = 2,
   ylim = range(c(perm_fanova_res_gabbiani$fobs,perm_fanova_res_gabbiani$qFmax)),
-  main = "Ftest gabbiani",
-  xlab = "Frequenza",
+  main = paste0("Ftest Gabbiani", "; permutation number = ", N_PERM),
+  xlab = "Frequency",
   ylab = "F"
 )
 lines(gabbiani_meanspec_freqs, perm_fanova_res_gabbiani$qF,

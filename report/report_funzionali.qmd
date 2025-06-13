@@ -7,6 +7,10 @@ format:
     documentclass: article
     toc: true
     number-sections: true
+
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{caption}
 ---
 
 ```{r include=FALSE, echo=FALSE}
@@ -20,6 +24,9 @@ knitr::opts_chunk$set(warning = FALSE)
 library(knitr)
 ```
 
+```{r}
+load("../results/prima_parte/outputs/basis_selection_work_space.RData")
+```
 
 
 
@@ -80,17 +87,13 @@ Esaminando la @fig-gufi-fits-crit si evidenziano diverse problematiche:
   
 - i vincoli migliorano chiaramente la rappresentazione funzionale, tuttavia, il numero di basi che minimizza LOOCV (grafico in basso a sinistra) è probabilmente troppo piccolo in quanto alcune funzioni hanno dei picchi troppo bassi, anche qui si potrebbe pensare di aumentare il numero di basi; nell'ultimo caso (penalizzaione sull'integrale della derivata seconda al quadrato) (grafico in basso a destra) una possibile critica è che le funzioni non siano abbastanza lisce.
 
-Risultati simili si hanno anche con le altre due specie.
-Dato che i criteri di selezione automatica proposti hanno mostrato le problematiche sopra descritte si è deciso di adottare un'euristica in maniera tale che le curve mostrassero un discreto adattamento e al contempo fossero abbastanza lisce. Dopo una serie di prove si sono considerate le funzioni vincolate con penalità sulla derivata seconda riducendo il numero di basi.
-
 ```{r}
 load("../results/prima_parte/outputs/manual_basis_pars_df.RData")
 ```
 
 
-```{r, #tab-manual-basis-pars-df, include= TRUE}
-kable(manual_basis_pars_df)
-```
+Risultati simili si hanno anche con le altre due specie.
+Dato che i criteri di selezione automatica proposti hanno mostrato le problematiche sopra descritte si è deciso di adottare un'euristica in maniera tale che le curve mostrassero un discreto adattamento e al contempo fossero abbastanza lisce. Dopo una serie di prove si sono considerate le funzioni vincolate con penalità sulla derivata seconda riducendo il numero di basi a `r manual_basis_pars_df$basis_num[1]` per tutte le specie.
 
   
 ## Medie funzionali
@@ -120,7 +123,34 @@ Considerando le prime due armoniche (ma un risultato analogo si ottiene anche co
 
 ![Punteggi delle prime due armoniche relative alle componenti principali funzionali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_pca_scores.png){#fig-f_pca_scores}
 
+
 ## ANOVA funzionale
+
+
+\begin{figure}[ht]
+\centering
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_quant_falchi.png"}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_quant_gufi.png"}
+\end{minipage}
+
+\vspace{0.5cm}
+
+\begin{minipage}{0.6\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_quant_gabbiani.png"}
+\end{minipage}
+
+\caption{Coefficienti del modelli di ANOVA funzionale, le bande intorno a ciascun coefficiente funzionale sono intervalli puntuali bootstrap (stratificato per gruppi) (`r N_BOOT` campioni bootstrap) relativi ai percentili 2.5% e 97.5%. In alto da sinistra verso destra i modelli per falchi e gufi, in basso per gabbiani.}
+\end{figure}
+
+
+![Grafici associati ai test F funzionali per ciascun modello di ANOVA funzionale. La linea continua rappresenta la statistica osservata, quella trattettagia il percentile puntuale al 95% della statistica F sotto l'ipotesi nulla stimato tramite permutazione (`r N_PERM` permutazioni)  e la linea rossa è il percentile al 95% dei massimi delle statistiche F sotto l'ipotesi nulla.](..\\results\\prima_parte\\images\\f_anova_f_test.png){#fig-f-anova-f-test}
 
 
 ## Modello funzione su funzione
@@ -140,7 +170,7 @@ $$
 (y - \Phi b)^T(y - \Phi b) + \lambda b^T Pb
 $${#eq-basisloss}
 dove $y$ è il vettore dei punti osservati $\Phi$ è la matrice delle funzioni di base valutate nei punti osservati del dominio della curva e $b$ è il vettore dei coefficienti, $P$ è una generica matrice di penalità e $\lambda > 0$ indica l'entità della penalizzaione (per un criterio non penalizzato è sufficiente porre $\lambda = 0$).
-Minizzare @eq-basisloss equivale a minizzare 
+Minizzare l' @eq-basisloss equivale a minizzare 
 
 $$
 -y^T \Phi b + b^T \frac{1}{2}(\Phi^T \Phi + \lambda P) b
@@ -149,15 +179,15 @@ $${#eq-basislossexp}
 Da cui $d = y^T \Phi$ e $D = \Phi^T \Phi + \lambda P$.
 Usando la definizione di scrittura in basi il vincolo è $0 \leq \phi^T(f)b \leq 1 \quad \forall f$, in pratica si discretizza $\phi(f_j)$ per $j = 1,..,J$.
 Sia $\Phi_J$ la matrice di funzioni di base valuate su griglia discretizzata: deve valere $\Phi_J b \leq \mathbb{1}$ o equivalentemente $-\Phi_J b \geq -\mathbb{1}$ dove con questa scrittura si intende che la disuguaglianza deve valere per ogni elemento dei vettori.
-Similmente, per vincolo di positività si ha $\Phi_J b \geq \mathbb{0}$, tuttavia, poichè per costruzione le basi bspline sono sempre non negative è sufficiente imporre $\mathbb{I} b \geq \mathbb{0}$ con $\mathbb{I}_J$ matrice identità. Combinando le due espressioni si ottiene 
+Similmente, per vincolo di positività si ha $\Phi_J b \geq \mathbb{0}$, tuttavia, poichè per costruzione le basi bspline sono sempre non negative è sufficiente imporre $\mathbb{I}_J b \geq \mathbb{0}$ con $\mathbb{I}_J$ matrice identità. Combinando le due espressioni si ottiene 
 
 $$ \begin{pmatrix}
 -\Phi\\
-\mathbb{I}
+\mathbb{I}_J
 \end{pmatrix} b \geq \begin{pmatrix}
 -\mathbb{1}\\
 \mathbb{0}
 \end{pmatrix}$$
 
-chiaramente $A = (-\Phi^T \quad \mathbb{I})$ e $b_0 = (-\mathbb{1} \quad \mathbb{0})^T$, è dunque conclusa la scrittura del problema vincolato come programma quadratico.
+chiaramente $A = (-\Phi^T \quad \mathbb{I}_j)$ e $b_0 = (-\mathbb{1} \quad \mathbb{0})^T$, è dunque conclusa la scrittura del problema vincolato come programma quadratico.
 
