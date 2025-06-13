@@ -1889,9 +1889,68 @@ par(mfrow = c(1,1))
 
 dev.off()
 
+# >> Manually choosing basis -------------------------------------
+
+manual_basis_pars_df = data.frame("species" = c("falchi", "gufi", "gabbiani"),
+                                  "basis_num" = c(70, 70, 70),
+                                  "lambda" = c(falchi_loocv_pen_diff$lambda_min,
+                                               gufi_loocv_pen_diff$lambda_min,
+                                               gabbiani_loocv_pen_diff$lambda_min))
+
+falchi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
+                                                        y_matrix = falchi_meanspec_amps,
+                                                        basis_num = manual_basis_pars_df[manual_basis_pars_df$species == "falchi","basis_num"],
+                                                        my.lambda = manual_basis_pars_df[manual_basis_pars_df$species == "falchi","lambda"])
+
+falchi_meanspec_fd = falchi_meanspec_fd_con_diff
+
+
+gufi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = gufi_meanspec_freqs,
+                                                      y_matrix = gufi_meanspec_amps,
+                                                      basis_num = manual_basis_pars_df[manual_basis_pars_df$species == "gufi","basis_num"],
+                                                      my.lambda = manual_basis_pars_df[manual_basis_pars_df$species == "gufi","lambda"])
+gufi_meanspec_fd = gufi_meanspec_fd_con_diff
+
+
+gabbiani_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = gabbiani_meanspec_freqs,
+                                                          y_matrix = gabbiani_meanspec_amps,
+                                                          basis_num = manual_basis_pars_df[manual_basis_pars_df$species == "gabbiani","basis_num"],
+                                                          my.lambda = manual_basis_pars_df[manual_basis_pars_df$species == "gabbiani","lambda"])
+gabbiani_meanspec_fd = gabbiani_meanspec_fd_con_diff
+
+
+png("results/prima_parte/images/manual_basis_selection.png",
+    width = MY.WIDTH, height = MY.HEIGHT)
+
+par(mfrow = c(3, 1))
+
+plot(falchi_meanspec_fd_con_diff,
+     main = paste0("Falchi Constraint Manual; ",
+                   "; nbasis = ",  manual_basis_pars_df[manual_basis_pars_df$species == "falchi","basis_num"],
+                   "; log-lambda =",
+                   round(log(manual_basis_pars_df[manual_basis_pars_df$species == "falchi","lambda"], base = 10),2), collapse = ""))
+
+plot(gufi_meanspec_fd_con_diff,
+     main = paste0("Gufi Constraint Manual; ",
+                   "; nbasis = ", manual_basis_pars_df[manual_basis_pars_df$species == "gufi","basis_num"], 
+                   "; log-lambda =",
+                   round(log(manual_basis_pars_df[manual_basis_pars_df$species == "gufi","lambda"], base = 10),2), collapse = ""))
+
+plot(gabbiani_meanspec_fd_con_diff,
+     main = paste0("Gabbiani Constraint Manual; ",
+                   "; nbasis = ", manual_basis_pars_df[manual_basis_pars_df$species == "gufi","basis_num"],
+                   "; log-lambda =",
+                   round(log(manual_basis_pars_df[manual_basis_pars_df$species == "gabbiani","lambda"], base = 10),2), collapse = ""))
+
+
+par(mfrow = c(1, 1))
+
+dev.off()
+
 # .. Save image ----------------------------
 gc()
 save.image(file = "results/prima_parte/outputs/basis_selection_work_space.RData")
+
 
 # >>f Means ---------------------------------
 
