@@ -35,6 +35,9 @@ sourceCpp("src/bvar_kron.cpp")
 # WARNING: maybe change the input name
 load("data/data_1.RData")
 
+# DON'T LOAD if you want to run from the next line
+load("results/prima_parte/outputs/basis_selection_work_space.RData")
+
 # subsample gufi due to computational issues
 gufi_ids_exclude = read.table("data/gufi_ids_exclude.txt",
                               header = T)
@@ -46,7 +49,7 @@ gufi = gufi[-gufi_ids_exclude$x,]
 # with the inference
 # the peaks are at the first position only
 
-to_remove_indexes = c(1,2,3)
+to_remove_indexes = c(1,2,3, which(gufi_meanspec_freqs > 4.9))
 
 gufi_meanspec_amps = gufi_meanspec_amps[-to_remove_indexes,]
 gabbiani_meanspec_amps = gabbiani_meanspec_amps[-to_remove_indexes,]
@@ -54,7 +57,14 @@ gabbiani_meanspec_amps = gabbiani_meanspec_amps[-to_remove_indexes,]
 gufi_meanspec_freqs = gufi_meanspec_freqs[-to_remove_indexes]
 gabbiani_meanspec_freqs = gabbiani_meanspec_freqs[-to_remove_indexes]
 
-load("results/prima_parte/outputs/basis_selection_work_space.RData")
+to_remove_indexes = c(which(falchi_meanspec_freqs < 2.6),
+                      which(falchi_meanspec_freqs > 7.4))
+
+falchi_meanspec_amps = falchi_meanspec_amps[-to_remove_indexes,]
+falchi_meanspec_freqs = falchi_meanspec_freqs[-to_remove_indexes]
+
+
+
 
 
 # save(
@@ -1077,6 +1087,7 @@ PermutFANOVA = function(factor,
                           lambda,
                           my.quantile = 0.95,
                           n_perm = 100,
+                          bool_intercept = FALSE,
                           seed = 123){
   
   set.seed(seed)
@@ -1125,7 +1136,13 @@ PermutFANOVA = function(factor,
     mtmp = fRegress(ytmp, xlist, betalist)
     
     Y = t(eval.fd(dom, ytmp)[, 1:ncol(X)])
-    intercept = t(eval.fd(dom, mtmp$betaestlist[[1]]$fd))
+    
+    intercept = 0
+    
+    if(bool_intercept){
+      intercept = t(eval.fd(dom, mtmp$betaestlist[[1]]$fd))
+    }
+    
     Yh = t(eval.fd(dom, mtmp$yhatfdobj)[, 1:ncol(X)])
     
     # Fmatr[b, ] = Ft(Yh, Y)
@@ -1138,14 +1155,18 @@ PermutFANOVA = function(factor,
   
   Y = t(eval.fd(dom, yfd)[, 1:ncol(X)])
   Yh = t(eval.fd(dom, m1$yhatfdobj)[, 1:ncol(X)])
-  intercept = t(eval.fd(dom, mtmp$betaestlist[[1]]$fd))
+  
+  intercept = 0
+  if(bool_intercept){
+    intercept = t(eval.fd(dom, mtmp$betaestlist[[1]]$fd))
+  }
   
   fobs = FtNew(yh = Yh, Y = Y, my.mean = intercept)
   
   return(list(
     "fobs" = fobs,
     "qF" = apply(Fmatr, 2, quantile, my.quantile),
-    "qFmax" = quantile(apply(Fmatr, 1, max), ,my.quantile)
+    "qFmax" = quantile(apply(Fmatr, 1, max), my.quantile)
   ))
   
 }
@@ -1369,8 +1390,8 @@ DO_SAVE_RDATA = TRUE
 
 
 # save Plotting
-MY.WIDTH = 2000
-MY.HEIGHT = 2000
+MY.WIDTH = 1300
+MY.HEIGHT = 1300
 
 
 
@@ -1384,13 +1405,13 @@ MY.HEIGHT = 2000
 
 
 # Changing basis number
-n_basis_seq = seq(20, nrow(falchi_meanspec_amps) - 2)
+n_basis_seq = seq(10, nrow(falchi_meanspec_amps) - 2)
 NORDER = 4
 rangeval_falchi <- range(falchi_meanspec_freqs)
 
 
 falchi_nbasis_gcv <- GCV_IntegerSmoothBasis(
-  n_basis_seq = 20:(nrow(falchi_meanspec_amps) - 2),
+  n_basis_seq = 10:(nrow(falchi_meanspec_amps) - 2),
   basis_order = NORDER,
   basis_rangeval = range(falchi_meanspec_freqs),
   x_grid = falchi_meanspec_freqs,
@@ -1646,14 +1667,14 @@ gabbiani_meanspec_fd_diff$fdnames = list("frequency" = gabbiani_meanspec_freqs,
 
 falchi_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = falchi_meanspec_freqs,
                                                  y_matrix = falchi_meanspec_amps,
-                                                 basis_num_seq = 20:50,
+                                                 basis_num_seq = 10:50,
                                                  box_constraints = c(0,1))
 
 
 falchi_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
                                                    y_matrix = falchi_meanspec_amps,
                                                    basis_num = 110,
-                                                   lambda_grid = 10^(seq(-6, -3, length = 20)),
+                                                   lambda_grid = 10^(seq(-10, -3, length = 20)),
                                                    box_constraints = c(0,1))
 
 falchi_meanspec_fd_con_int = ToFdConstraintSplinesInt(x_grid = falchi_meanspec_freqs,
@@ -2047,6 +2068,7 @@ dev.off()
 # │Falchi│------------------------------------
 # ╰──────╯
 
+# DON'T LOAD if you want to run
 load("results/prima_parte/outputs/cv_fanova_res_falchi.RData")
 
 set.seed(123)
@@ -2102,7 +2124,7 @@ perm_fanova_res_falchi = PermutFANOVA(factor = falchi$Climate_zone,
                                       y_names = falchi_meanspec_fd_diff$fdnames,
                                       basis_beta = falchi_meanspec_fd_diff$basis,
                                       lambda = 0.01,
-                                      n_perm = 1000,
+                                      n_perm = 10,
                                       seed = 123)
 
 gc()
@@ -2183,8 +2205,8 @@ perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
                                       coef_y = gufi_meanspec_fd_diff$coefs,
                                       y_names = gufi_meanspec_fd_diff$fdnames,
                                       basis_beta = gufi_meanspec_fd_diff$basis,
-                                      lambda = cv_fanova_res_gufi$lambda_min,
-                                      n_perm = 1000,
+                                      lambda = 0.001,
+                                      n_perm = 10,
                                       seed = 123)
 
 gc()
@@ -2353,7 +2375,6 @@ plot(
   perm_fanova_res_gufi$fobs,
   type = 'l',
   lwd = 2,
-  ylim = c(0, 1.1),
   main = "Ftest Gufi",
   xlab = "Frequenza",
   ylab = "F"
