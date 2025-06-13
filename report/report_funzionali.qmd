@@ -11,6 +11,7 @@ format:
 header-includes:
   - \usepackage{graphicx}
   - \usepackage{caption}
+  - \usepackage{float}
 ---
 
 ```{r include=FALSE, echo=FALSE}
@@ -65,7 +66,7 @@ Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincol
 #### Risultati
 
 Introdurre i vincoli non dà luogo ad uno stimatore lineare in $y$, non è quindi possibile usare GCV come criterio per la selezione dei parametri di regolazione, si impiega invece una procedura di convalida incrociata "Leave One Out" (LOOCV).
-A titolo esemplificativo si riportano le curve relative ai gufi con i quattro metodi: GCV senza vincolo e LOOCV con vincolo; in  @tab:representation-selection-df sono riportate le specifiche di ciascun metodo.
+A titolo esemplificativo si riportano le curve relative ai gufi con i quattro metodi: GCV senza vincolo e LOOCV con vincolo; in  @tab-representation-selection-df sono riportate le specifiche di ciascun metodo.
 
 
 ```{r}
@@ -74,14 +75,21 @@ load("../results/prima_parte/outputs/representation_selection_df.RData")
 
 
 ```{r, #tab-representation-selection-df, include= TRUE}
-kable(representation_selection_df)
+kable(representation_selection_df,
+      caption = "Tabella le cui colonne da sinistra verso destra contengono rispettivamente l'animale considerato, se il metodo di stima è vincolato in (0,1) (TRUE) oppure no (FALSE), il tipo di penalità: numero intero di basi (INT) o penalità sull'integrale della derivata seconda (DIFF), il parametro ottimo selezionato (numero di basi per penalità INT e lambda per penalità DIFF) e il numero di punti (unici) del dominio.")
 ```
 
 
 
-![Rappresentazioni funzionali tramite funzioni di base degli spettrogrammi medi dei suoni dei gufi. In alto i criteri non vincolati: a sinistra con il numero di basi selezionate tramite GCV per non penalizzato, a destra con il lambda selezionato con penalità sulla derivata seconda. In basso i criteri vincolati: a sinistra con il numero di basi selezionate tramite convalida incrociata LOOCV per il criterio non penalizzato e a destra con il lambda ottimo con penalità sulla derivata seconda](..\\results\\prima_parte\\images\\gufi_fits_crit.png){#fig-gufi-fits-crit}
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\textwidth]{"../results/prima_parte/images/gufi_fits_crit.png"}
+\caption{Rappresentazioni funzionali tramite funzioni di base degli spettrogrammi medi dei suoni dei gufi. In alto i criteri non vincolati: a sinistra con il numero di basi selezionate tramite GCV per non penalizzato, a destra con il lambda selezionato con penalità sulla derivata seconda. In basso i criteri vincolati: a sinistra con il numero di basi selezionate tramite convalida incrociata LOOCV per il criterio non penalizzato e a destra con il lambda ottimo con penalità sulla derivata seconda.}
+\label{fig-gufi-fits-crit}
+\end{figure}
 
-Esaminando la @fig-gufi-fits-crit si evidenziano diverse problematiche:
+
+Esaminando la Figura \ref{fig-gufi-fits-crit} si evidenziano diverse problematiche:
 
   - nel caso senza vincoli e con penalizzazione solo sul numero di basi (grafico in alto a sinistra) si osserva che non sono rispettati i vincoli di non negatività e di ampiezza inferiore ad uno, problema presente anche con penalizzazione sull'integrale della derivata seconda al quadrato (grafico in alto a destra).
   
@@ -98,36 +106,72 @@ Dato che i criteri di selezione automatica proposti hanno mostrato le problemati
   
 ## Medie funzionali
 
-In @fig-fmeansd si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
+In Figura \ref{fig-fmeansd} si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
 
 Per i falchi le medie e le deviazioni standard dei gruppi hot e temperate appaiono vicine nel ragne di frequenze tra 3khz e 4.5khz, mentre fuori da questo intervallo presentano differenze sia in media che in varianza, rimandendo comunque sempre sopra le curve del gruppo cold.
 
 Come per i falchi anche per i gufi le curve medie nei tre gruppi sembrano seguire un andamente comune, così come le deviazioni standard, qui le due curve più vicine sono invece quelle dei gruppi cold e temperate. Risalta il picco nei pressi dello zero, ciò potrebbe essere semplicemente un artefatto numerico.
 
-Nei gabbiani la curva media che di discosta dalle altre è quella relativa al gruppo delle Canarie che domina le altre curve alle frequenze basse, mentre per quelle più alta è sotto tutte le altre curve medie. Si nota inolte un picco nella funzione media e un doppio picco per la deviazione standard intorno ai 3.5 khz per il gruppo Centre.
+Nei gabbiani la curva media che si discosta dalle altre è quella relativa al gruppo delle Canarie che domina le altre curve alle frequenze basse, mentre per quelle più alta è sotto tutte le altre curve medie. Si nota inolte un picco nella funzione media e un doppio picco per la deviazione standard intorno ai 3.5 khz per il gruppo Centre.
 
-![Medie Funzionali degli spettrogrammi medi dei suoni degli animali per i diversi gruppi a cui è aggiunto e sottrato l'errore standard funzionale. Da sinistra verso destra falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_mean_sd.png){#fig-fmeansd}
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\textwidth]{"../results/prima_parte/images/f_mean_sd.png"}
+\caption{Medie Funzionali degli spettrogrammi medi dei suoni degli animali per i diversi gruppi a cui è aggiunto e sottrato l'errore standard funzionale. Da sinistra verso destra falchi, gufi e gabbiani.}
+\label{fig-fmeansd}
+\end{figure}
+
+
 
 ## PCA funzionale
 
 Si effettua un'analisi delle componenti principali funzionali, sia per avere delle ulteriori informazioni descrittive sia per vedere se i punteggi di tali componenti individuano o meno dei cluster di osservazioni potenzialmente diversi da quelli scelti in questa sede.
 
-Inizialmente si fissa un numero di armoniche pari a 10 (@fig-f_pca_explained_var), per i falchi le prime 3 componenti spiegano circa l'80% della varianza, per i gufi sono necessarie 4 componenti per spiegare circa l'80% della varianza, mentre per i gabbiani l'85% della varianza è spiegato dalle prime tre componenti.
+Inizialmente si fissa un numero di armoniche pari a 10 (Figura \ref{fig-f_pca_explained_var}), per i falchi le prime 3 componenti spiegano circa l'80% della varianza, per i gufi sono necessarie 4 componenti per spiegare circa l'80% della varianza, mentre per i gabbiani l'85% della varianza è spiegato dalle prime tre componenti.
 
-![Varianza spiegata cumulata per le prime 10 componenti funzionali principali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_pca_explained_var.png){#fig-f_pca_explained_var}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\textwidth]{"../results/prima_parte/images/f_pca_explained_var.png"}
+\caption{Varianza spiegata cumulata per le prime 10 componenti funzionali principali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani.}
+\label{fig-f_pca_explained_var}
+\end{figure}
 
-Focalizzandosi sulle prime tre armoniche (@fig-f_pca_harmonics) si può vedere che, per tutti gli animali, la prima armonica segue abbastanza la forma della media funzionale, la seconda presenta un andamento opposto alla media e la terza varia molto tra i diversi animali e non è di facile intepretazione.
 
-![Prime tre armoniche (da sinistra verso destra) con piccoli scostamenti dalla media relative alle componenti principali funzionali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_pca_harmonics.png){#fig-f_pca_harmonics}
-Considerando le prime due armoniche (ma un risultato analogo si ottiene anche con le prime tre) e rappresentando graficamente i punteggi (@fig-f_pca_scores) non si distingue nessun cluster di punti.
+Focalizzandosi sulle prime tre armoniche (Figura \ref{fig-f-pca-harmonics}) si può vedere che, per tutti gli animali, la prima armonica segue abbastanza regolarmente la forma della media funzionale, la seconda presenta un andamento opposto alla media e la terza varia molto tra i diversi animali e non è di facile intepretazione.
 
-![Punteggi delle prime due armoniche relative alle componenti principali funzionali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_pca_scores.png){#fig-f_pca_scores}
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\textwidth]{"../results/prima_parte/images/f_pca_harmonics.png"}
+\caption{Prime tre armoniche (da sinistra verso destra) con piccoli scostamenti dalla media relative alle componenti principali funzionali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani.}
+\label{fig-f-pca-harmonics}
+\end{figure}
+
+Considerando le prime due armoniche (ma un risultato analogo si ottiene anche con le prime tre) e rappresentando graficamente i punteggi (Figura \ref{fig-f-pca-scores}) non si distingue nessun cluster di punti.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\textwidth]{"../results/prima_parte/images/f_pca_scores.png"}
+\caption{Punteggi delle prime due armoniche relative alle componenti principali funzionali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani.}
+\label{fig-f-pca-scores}
+\end{figure}
+
 
 
 ## ANOVA funzionale
 
+Per ciascun animale si considera un modello di ANOVA funzionale:
 
-\begin{figure}[ht]
+$$
+y(f) = \alpha(f) + \sum^{G}_{g = 1} \beta_g(f) + \epsilon(f) \text{ s.t. } \sum^{G}_{g = 1} \beta_g(f) = 0 \text{ } \forall f
+$${#eq-fANOVA}
+
+Dove $y(f)$ è l'ampiezza in funzione della frequenza, $\alpha(f)$ è l'intercetta funzionale, $\beta_g(f)$ è il coefficiente associato al gruppo $g$-esimo, si impone il vincolo di somma a zero per l'identificabilità e $\epsilon(f)$ è il termine di errore omoschedastico.
+Per la rappresentazione funzionale di intercetta e coefficienti si utilizzano le stesse basi usate per rappresentare $y(f)$ e descritte nei punti precedenti, qui non si impongono vincoli ma utilizza una penalità sull'integrale del quadrato della derivata seconda per tutti i coefficienti ad eccezione dell'intercetta; per la selezione del parametro di regolazione $\lambda$ si considera il valore minimo di errore integrato di convalida incrociata a 5 fold (ogni insieme di convalida è campionato per strati in modo tale da mantenere la medesima proporzione di osservazioni per ciascun gruppo presente nei dati completi).
+
+Per una valutazione dell'incertezza sui coefficienti, senza assumere l'omoschedasticità del termine d'errore, si impiega una procedura di bootstrap non parametrico (stratificato per gruppo) i cui risultati sono visibili in Figura \ref{fig-fANOVA-beta}.
+
+
+\begin{figure}[H]
 \centering
 \begin{minipage}{0.48\textwidth}
   \centering
@@ -138,19 +182,25 @@ Considerando le prime due armoniche (ma un risultato analogo si ottiene anche co
   \centering
   \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_quant_gufi.png"}
 \end{minipage}
-
 \vspace{0.5cm}
-
 \begin{minipage}{0.6\textwidth}
   \centering
   \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_quant_gabbiani.png"}
 \end{minipage}
+\caption{Coefficienti del modelli di ANOVA funzionale, le bande intorno a ciascun coefficiente funzionale sono intervalli puntuali bootstrap (stratificato per gruppi) (`r N_BOOT` campioni bootstrap) relativi ai percentili 2.5\% e 97.5\%. In alto da sinistra verso destra i modelli per falchi e gufi, in basso per gabbiani.}
+\label{fig-fANOVA-beta}
+\end{figure}
 
-\caption{Coefficienti del modelli di ANOVA funzionale, le bande intorno a ciascun coefficiente funzionale sono intervalli puntuali bootstrap (stratificato per gruppi) (`r N_BOOT` campioni bootstrap) relativi ai percentili 2.5% e 97.5%. In alto da sinistra verso destra i modelli per falchi e gufi, in basso per gabbiani.}
+Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gruppi si eseguo un test di permutazione basato sulla statistica F funzionale (Figura \ref{fig-f-anova-f-test}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{"../results/prima_parte/images/f_anova_f_test.png"}
+\caption{Grafici associati ai test F funzionali per ciascun modello di ANOVA funzionale. La linea continua rappresenta la statistica osservata, quella trattettagia il percentile puntuale al 95\% della statistica F sotto l'ipotesi nulla stimato tramite permutazione (`r N_PERM` permutazioni)  e la linea rossa è il percentile al 95\% dei massimi delle statistiche F sotto l'ipotesi nulla.}
+\label{fig-f-anova-f-test}
 \end{figure}
 
 
-![Grafici associati ai test F funzionali per ciascun modello di ANOVA funzionale. La linea continua rappresenta la statistica osservata, quella trattettagia il percentile puntuale al 95% della statistica F sotto l'ipotesi nulla stimato tramite permutazione (`r N_PERM` permutazioni)  e la linea rossa è il percentile al 95% dei massimi delle statistiche F sotto l'ipotesi nulla.](..\\results\\prima_parte\\images\\f_anova_f_test.png){#fig-f-anova-f-test}
 
 
 ## Modello funzione su funzione
