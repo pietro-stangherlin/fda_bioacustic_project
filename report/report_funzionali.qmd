@@ -1,6 +1,6 @@
 ---
 title: "Report Progetto Dati Funzionali"
-author: "Matteo Ceola, Paolo Magagnato, Marco Piccolo e Pietro Stangherlin"
+author: "Matteo Ceola, Paolo Magagnato, Marco Piccolo, Pietro Stangherlin"
 lang: it
 format:
   pdf:
@@ -53,7 +53,7 @@ Tuttavia questi due criteri non permettono il rispetto dei vincoli:
   1) di non negatività della curva
   2) di ampiezza non superiore a 1 (a causa della normalizzazione).
   
-Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica ([A1](#A1)  ) per cui sono disponibili delle routine.
+Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica ([A1](#A1)) per cui sono disponibili delle routine.
 
 #### Risultati
 
@@ -71,22 +71,31 @@ kable(representation_selection_df)
 ```
 
 
-![Rappresentazioni funzionali degli spettrogrammi medi dei suoni dei gufi](..\\results\\prima_parte\\images\\gufi_fits_crit.png){#fig-gufi_fits_crit}
-Esaminando \@fig-gufi_fits_crit si evidenziano diverse problematiche:
 
-  - nel caso senza vincoli e con penalizzazione solo sul numero di basi (grafico in alto a sinistra) il criterio GCV seleziona un numero eccessivo di basi (vicino al massimo possibile) che induce dei gravi problemi di comportamento erratico agli estremi, una possible soluzione è selezionare manualmente il numero di basi osservando criticamente sia l'andamento dell'errore di GCV sia le funzioni risultanti.
-  
-  - nel caso senza vincoli e con penalizzazione sull'integrale della derivata seconda al quadrato (grafico in alto a destra), benchè il miglioramento rispetto al primo caso sia notevole, si nota come le funzioni non rispettino i vincoli: alcune funzioni sono minori di zero (per frequenze piccole) e  maggiori di 1.
+![Rappresentazioni funzionali tramite funzioni di base degli spettrogrammi medi dei suoni dei gufi. In alto i criteri non vincolati: a sinistra con il numero di basi selezionate tramite GCV per non penalizzato, a destra con il lambda selezionato con penalità sulla derivata seconda. In basso i criteri vincolati: a sinistra con il numero di basi selezionate tramite convalida incrociata LOOCV per il criterio non penalizzato e a destra con il lambda ottimo con penalità sulla derivata seconda](..\\results\\prima_parte\\images\\gufi_fits_crit.png){#fig-gufi-fits-crit}
+
+Esaminando la @fig-gufi-fits-crit si evidenziano diverse problematiche:
+
+  - nel caso senza vincoli e con penalizzazione solo sul numero di basi (grafico in alto a sinistra) si osserva che non sono rispettati i vincoli di non negatività e di ampiezza inferiore ad uno, problema presente anche con penalizzazione sull'integrale della derivata seconda al quadrato (grafico in alto a destra).
   
 - i vincoli migliorano chiaramente la rappresentazione funzionale, tuttavia, il numero di basi che minimizza LOOCV (grafico in basso a sinistra) è probabilmente troppo piccolo in quanto alcune funzioni hanno dei picchi troppo bassi, anche qui si potrebbe pensare di aumentare il numero di basi; nell'ultimo caso (penalizzaione sull'integrale della derivata seconda al quadrato) (grafico in basso a destra) una possibile critica è che le funzioni non siano abbastanza lisce.
 
 Risultati simili si hanno anche con le altre due specie.
-Alla luce dei commenti fatti si è scelto di impiegare i coefficienti ottenuti tramite imposizione di vincolo con penalità sull'integrale del quadrato della derivata seconda.
+Dato che i criteri di selezione automatica proposti hanno mostrato le problematiche sopra descritte si è deciso di adottare un'euristica in maniera tale che le curve mostrassero un discreto adattamento e al contempo fossero abbastanza lisce. Dopo una serie di prove si sono considerate le funzioni vincolate con penalità sulla derivata seconda riducendo il numero di basi.
+
+```{r}
+load("../results/prima_parte/outputs/manual_basis_pars_df.RData")
+```
+
+
+```{r, #tab-manual-basis-pars-df, include= TRUE}
+kable(manual_basis_pars_df)
+```
 
   
 ## Medie funzionali
 
-In @fig-f_mean_sd si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
+In @fig-fmeansd si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
 
 Per i falchi le medie e le deviazioni standard dei gruppi hot e temperate appaiono vicine nel ragne di frequenze tra 3khz e 4.5khz, mentre fuori da questo intervallo presentano differenze sia in media che in varianza, rimandendo comunque sempre sopra le curve del gruppo cold.
 
@@ -94,7 +103,7 @@ Come per i falchi anche per i gufi le curve medie nei tre gruppi sembrano seguir
 
 Nei gabbiani la curva media che di discosta dalle altre è quella relativa al gruppo delle Canarie che domina le altre curve alle frequenze basse, mentre per quelle più alta è sotto tutte le altre curve medie. Si nota inolte un picco nella funzione media e un doppio picco per la deviazione standard intorno ai 3.5 khz per il gruppo Centre.
 
-![Medie Funzionali degli spettrogrammi medi dei suoni degli animali per i diversi gruppi a cui è aggiunto e sottrato l'errore standard funzionale. Da sinistra verso destra falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_mean_sd.png){#fig-f_mean_sd}
+![Medie Funzionali degli spettrogrammi medi dei suoni degli animali per i diversi gruppi a cui è aggiunto e sottrato l'errore standard funzionale. Da sinistra verso destra falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_mean_sd.png){#fig-fmeansd}
 
 ## PCA funzionale
 
@@ -112,6 +121,7 @@ Considerando le prime due armoniche (ma un risultato analogo si ottiene anche co
 ![Punteggi delle prime due armoniche relative alle componenti principali funzionali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani](..\\results\\prima_parte\\images\\f_pca_scores.png){#fig-f_pca_scores}
 
 ## ANOVA funzionale
+
 
 ## Modello funzione su funzione
 

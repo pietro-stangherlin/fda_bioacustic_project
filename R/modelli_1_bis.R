@@ -1115,7 +1115,12 @@ PermutFANOVA = function(factor,
   m1 = fRegress(yfd, xlist, betalist)
   
   
-  # Permutations 
+  # Permutations
+  
+  Ft = function(yh, Y) {
+    res = Y - yh
+    apply(yh, 2, var) / apply(res^2, 2, mean)
+  }
   
   # including intercept
   FtNew = function(yh, my.mean, Y){
@@ -1145,9 +1150,9 @@ PermutFANOVA = function(factor,
     
     Yh = t(eval.fd(dom, mtmp$yhatfdobj)[, 1:ncol(X)])
     
-    # Fmatr[b, ] = Ft(Yh, Y)
+    Fmatr[b, ] = Ft(Yh, Y)
     
-    Fmatr[b, ] = FtNew(yh = Yh, Y = Y, my.mean = intercept)
+    # Fmatr[b, ] = FtNew(yh = Yh, Y = Y, my.mean = intercept)
     
     
     cat(b, "\n")
@@ -1161,7 +1166,9 @@ PermutFANOVA = function(factor,
     intercept = t(eval.fd(dom, mtmp$betaestlist[[1]]$fd))
   }
   
-  fobs = FtNew(yh = Yh, Y = Y, my.mean = intercept)
+  # fobs = FtNew(yh = Yh, Y = Y, my.mean = intercept)
+  
+  fobs = Ft(yh = Yh, Y = Y)
   
   return(list(
     "fobs" = fobs,
@@ -1891,11 +1898,16 @@ dev.off()
 
 # >> Manually choosing basis -------------------------------------
 
+# after some tries
+
 manual_basis_pars_df = data.frame("species" = c("falchi", "gufi", "gabbiani"),
                                   "basis_num" = c(70, 70, 70),
                                   "lambda" = c(falchi_loocv_pen_diff$lambda_min,
                                                gufi_loocv_pen_diff$lambda_min,
                                                gabbiani_loocv_pen_diff$lambda_min))
+
+save(manual_basis_pars_df,
+     file = "results/prima_parte/outputs/manual_basis_pars_df.RData")
 
 falchi_meanspec_fd_con_diff = ToFdConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
                                                         y_matrix = falchi_meanspec_amps,
@@ -2007,7 +2019,7 @@ gabbiani_meanspec_fd_sd = lapply(
 png("results/prima_parte/images/f_mean_sd.png",
      width = MY.WIDTH, height = MY.HEIGHT)
 
-par(mfrow = c(1,3))
+par(mfrow = c(3,1))
 
 FunctionalMeanBandPlot(fd_means = falchi_meanspec_fd_mean,
                        fd_sds = falchi_meanspec_fd_sd,
@@ -2139,24 +2151,23 @@ cv_fanova_res_falchi = CvFunctionalANOVA(factor = falchi$Climate_zone,
                   basis_y = falchi_meanspec_fd$basis,
                   coef_y = falchi_meanspec_fd$coefs,
                   y_names = falchi_meanspec_fd_diff$fdnames,
-                  basis_beta = falchi_meanspec_fd_diff$basis,
-                  lambda_grid = 10^seq(-10, 2, by = 0.5),
+                  basis_beta = falchi_meanspec_fd$basis,
+                  lambda_grid = 10^seq(1, 3, length = 10),
                   nfold = 5)
 
 save(cv_fanova_res_falchi,
      file = "results/prima_parte/outputs/cv_fanova_res_falchi.RData")
 
 
-falchi_bs_beta = BootBetaIC(B = 1000,
+falchi_bs_beta = BootBetaIC(B = 100,
                             factor = falchi$Climate_zone,
                             X = falchi_meanspec_amps,
                             dom = falchi_meanspec_freqs,
                             basis_y = falchi_meanspec_fd$basis,
                             coef_y = falchi_meanspec_fd$coefs,
-                            y_names = falchi_meanspec_fd_diff$fdnames,
-                            basis_beta = falchi_meanspec_fd_diff$basis,
-                            lambda = 0.01,
-                            n_discrete = 500)
+                            y_names = falchi_meanspec_fd$fdnames,
+                            basis_beta = falchi_meanspec_fd$basis,
+                            lambda = cv_fanova_res_falchi$lambda_min)
 
 save(boot_fanova_beta_falchi,
      file = "results/prima_parte/outputs/boot_fanova_beta_falchi.RData")
@@ -2180,10 +2191,10 @@ perm_fanova_res_falchi = PermutFANOVA(factor = falchi$Climate_zone,
                                       dom = falchi_meanspec_freqs,
                                       basis_y = falchi_meanspec_fd$basis,
                                       coef_y = falchi_meanspec_fd$coefs,
-                                      y_names = falchi_meanspec_fd_diff$fdnames,
-                                      basis_beta = falchi_meanspec_fd_diff$basis,
-                                      lambda = 0.01,
-                                      n_perm = 10,
+                                      y_names = falchi_meanspec_fd$fdnames,
+                                      basis_beta = falchi_meanspec_fd$basis,
+                                      lambda = cv_fanova_res_falchi$lambda_min,
+                                      n_perm = 100,
                                       seed = 123)
 
 gc()
@@ -2219,10 +2230,10 @@ load("results/prima_parte/outputs/cv_fanova_res_gufi.RData")
 cv_fanova_res_gufi = CvFunctionalANOVA(factor = gufi$Climate_zone,
                                          X = gufi_meanspec_amps,
                                          dom = gufi_meanspec_freqs,
-                                         basis_y = gufi_meanspec_fd_diff$basis,
-                                         coef_y = gufi_meanspec_fd_diff$coefs,
-                                         y_names = gufi_meanspec_fd_diff$fdnames,
-                                         basis_beta = gufi_meanspec_fd_diff$basis,
+                                         basis_y = gufi_meanspec_fd$basis,
+                                         coef_y = gufi_meanspec_fd$coefs,
+                                         y_names = gufi_meanspec_fd$fdnames,
+                                         basis_beta = gufi_meanspec_fd$basis,
                                          lambda_grid = 10^seq(-10, 2, by = 0.5),
                                          nfold = 5)
 
@@ -2242,14 +2253,14 @@ save(cv_fanova_res_gufi,
 
 gc()
 
-boot_fanova_beta_gufi = BootBetaIC(B = 1000,
+boot_fanova_beta_gufi = BootBetaIC(B = 100,
                             factor = gufi$Climate_zone,
                             X = gufi_meanspec_amps,
                             dom = gufi_meanspec_freqs,
                             basis_y = gufi_meanspec_fd$basis,
                             coef_y = gufi_meanspec_fd$coefs,
-                            y_names = gufi_meanspec_fd_diff$fdnames,
-                            basis_beta = gufi_meanspec_fd_diff$basis,
+                            y_names = gufi_meanspec_fd$fdnames,
+                            basis_beta = gufi_meanspec_fd$basis,
                             lambda = cv_fanova_res_gufi$lambda_min,
                             n_discrete = 500)
 
@@ -2260,12 +2271,12 @@ save(boot_fanova_beta_gufi,
 perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
                                       X = gufi_meanspec_amps,
                                       dom = gufi_meanspec_freqs,
-                                      basis_y = gufi_meanspec_fd_diff$basis,
-                                      coef_y = gufi_meanspec_fd_diff$coefs,
-                                      y_names = gufi_meanspec_fd_diff$fdnames,
-                                      basis_beta = gufi_meanspec_fd_diff$basis,
-                                      lambda = 0.001,
-                                      n_perm = 10,
+                                      basis_y = gufi_meanspec_fd$basis,
+                                      coef_y = gufi_meanspec_fd$coefs,
+                                      y_names = gufi_meanspec_fd$fdnames,
+                                      basis_beta = gufi_meanspec_fd$basis,
+                                      lambda = cv_fanova_res_gufi$lambda_min,
+                                      n_perm = 100,
                                       seed = 123)
 
 gc()
@@ -2282,8 +2293,8 @@ gc()
 #                                         matrix(2:5, 2, 2)))
 
 
-PlotBetaWithQuantiles(original_fit = gufi_bs_beta$original_fit_beta,
-                      quantile_betas = gufi_bs_beta$quantile_betas,
+PlotBetaWithQuantiles(original_fit = boot_fanova_beta_gufi$original_fit_beta,
+                      quantile_betas = boot_fanova_beta_gufi$quantile_betas,
                       my.name = "Gufi",
                       save_path = "results/prima_parte/images/f_beta_quant_gufi.png",
                       my.width = MY.WIDTH,
@@ -2302,10 +2313,10 @@ load("results/prima_parte/outputs/cv_fanova_res_gabbiani.RData")
 cv_fanova_res_gabbiani = CvFunctionalANOVA(factor = gabbiani$Cluster,
                                        X = gabbiani_meanspec_amps,
                                        dom = gabbiani_meanspec_freqs,
-                                       basis_y = gabbiani_meanspec_fd_diff$basis,
-                                       coef_y = gabbiani_meanspec_fd_diff$coefs,
-                                       y_names = gabbiani_meanspec_fd_diff$fdnames,
-                                       basis_beta = gabbiani_meanspec_fd_diff$basis,
+                                       basis_y = gabbiani_meanspec_fd$basis,
+                                       coef_y = gabbiani_meanspec_fd$coefs,
+                                       y_names = gabbiani_meanspec_fd$fdnames,
+                                       basis_beta = gabbiani_meanspec_fd$basis,
                                        lambda_grid = 10^seq(-10, 2, by = 0.5),
                                        nfold = 5)
 
@@ -2316,14 +2327,14 @@ save(cv_fanova_res_gabbiani,
 gc()
 
 
-boot_fanova_beta_gabbiani = BootBetaIC(B = 1000,
+boot_fanova_beta_gabbiani = BootBetaIC(B = 100,
                           factor = gabbiani$Cluster,
                           X = gabbiani_meanspec_amps,
                           dom = gabbiani_meanspec_freqs,
                           basis_y = gabbiani_meanspec_fd$basis,
                           coef_y = gabbiani_meanspec_fd$coefs,
-                          y_names = gabbiani_meanspec_fd_diff$fdnames,
-                          basis_beta = gabbiani_meanspec_fd_diff$basis,
+                          y_names = gabbiani_meanspec_fd$fdnames,
+                          basis_beta = gabbiani_meanspec_fd$basis,
                           lambda = cv_fanova_res_gabbiani$lambda_min,
                           n_discrete = 500)
 
@@ -2344,12 +2355,12 @@ save(boot_fanova_beta_gabbiani,
 perm_fanova_res_gabbiani = PermutFANOVA(factor = gabbiani$Cluster,
                                     X = gabbiani_meanspec_amps,
                                     dom = gabbiani_meanspec_freqs,
-                                    basis_y = gabbiani_meanspec_fd_diff$basis,
-                                    coef_y = gabbiani_meanspec_fd_diff$coefs,
-                                    y_names = gabbiani_meanspec_fd_diff$fdnames,
-                                    basis_beta = gabbiani_meanspec_fd_diff$basis,
+                                    basis_y = gabbiani_meanspec_fd$basis,
+                                    coef_y = gabbiani_meanspec_fd$coefs,
+                                    y_names = gabbiani_meanspec_fd$fdnames,
+                                    basis_beta = gabbiani_meanspec_fd$basis,
                                     lambda = cv_fanova_res_gabbiani$lambda_min,
-                                    n_perm = 1000,
+                                    n_perm = 100,
                                     seed = 123)
 
 gc()
@@ -2410,35 +2421,41 @@ plot(cv_fanova_res_gabbiani$lambda_grid,
 dev.off()
 
 # .. f test --------
-par(mfrow = c(3, 1))
+
 
 png("results/prima_parte/images/f_anova_f_test.png",
      width = MY.WIDTH, height = MY.HEIGHT)
+
+par(mfrow = c(3, 1))
 
 # falchi
 plot(
   falchi_meanspec_freqs,
   perm_fanova_res_falchi$fobs,
+  ylim = range(c(perm_fanova_res_falchi$fobs,perm_fanova_res_falchi$qFmax)),
   type = 'l',
   lwd = 2,
   main = "Ftest Falchi",
   xlab = "Frequenza",
   ylab = "F"
 )
-lines(falchi_meanspec_freqs, perm_fanova_res_falchi$qF, lty = 3)
+lines(falchi_meanspec_freqs, perm_fanova_res_falchi$qF,
+      lty = 3, lwd = 2)
 abline(h = perm_fanova_res_falchi$qFmax, lwd = 2, col = 2)
 
 # gufi
 plot(
   gufi_meanspec_freqs,
   perm_fanova_res_gufi$fobs,
+  ylim = range(c(perm_fanova_res_gufi$fobs,perm_fanova_res_gufi$qFmax)),
   type = 'l',
   lwd = 2,
   main = "Ftest Gufi",
   xlab = "Frequenza",
   ylab = "F"
 )
-lines(gufi_meanspec_freqs, perm_fanova_res_gufi$qF, lty = 3)
+lines(gufi_meanspec_freqs, perm_fanova_res_gufi$qF,
+      lty = 3, lwd = 2)
 abline(h = perm_fanova_res_gufi$qFmax, lwd = 2, col = 2)
 
 
@@ -2448,12 +2465,13 @@ plot(
   perm_fanova_res_gabbiani$fobs,
   type = 'l',
   lwd = 2,
-  ylim = c(0, 1.1),
+  ylim = range(c(perm_fanova_res_gabbiani$fobs,perm_fanova_res_gabbiani$qFmax)),
   main = "Ftest gabbiani",
   xlab = "Frequenza",
   ylab = "F"
 )
-lines(gabbiani_meanspec_freqs, perm_fanova_res_gabbiani$qF, lty = 3)
+lines(gabbiani_meanspec_freqs, perm_fanova_res_gabbiani$qF,
+      lty = 3, lwd = 2)
 abline(h = perm_fanova_res_gabbiani$qFmax, lwd = 2, col = 2)
 
 dev.off()
