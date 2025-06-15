@@ -1213,13 +1213,13 @@ FunctionalMeanBandPlot = function(fd_means,
   
   for (i in 1:length(fd_means)) {
     lines(
-      fd_means[[i]] + 2 * fd_sds[[i]],
+      fd_means[[i]] + fd_sds[[i]],
       col = i,
       lwd = my.lwd,
       lty = 2
     )
     lines(
-      fd_means[[i]] - 2 * fd_sds[[i]],
+      fd_means[[i]] - fd_sds[[i]],
       col = i,
       lwd = my.lwd,
       lty = 2

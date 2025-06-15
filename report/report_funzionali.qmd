@@ -61,7 +61,7 @@ Tuttavia questi due criteri non permettono il rispetto dei vincoli:
   1) di non negatività della curva
   2) di ampiezza non superiore a 1 (a causa della normalizzazione).
   
-Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica ([A1](#A1)) per cui sono disponibili delle routine.
+Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica ([A1](#A1: Splines vincolate penalizzate)) per cui sono disponibili delle routine.
 
 #### Risultati
 
@@ -116,16 +116,16 @@ Dato che i criteri di selezione automatica proposti hanno mostrato le problemati
 
 In Figura \ref{fig-fmeansd} si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
 
-Per i falchi le medie e le deviazioni standard dei gruppi hot e temperate appaiono vicine nel ragne di frequenze tra 3khz e 4.5khz, mentre fuori da questo intervallo presentano differenze sia in media che in varianza, rimandendo comunque sempre sopra le curve del gruppo cold.
+Per i falchi le medie e le deviazioni standard dei gruppi hot e temperate appaiono vicine nel range di frequenze tra 3khz e 4.5khz, mentre fuori da questo intervallo presentano differenze sia in media che in varianza, rimandendo comunque sempre sopra la curva media del gruppo cold che mostra un primo picco d'ampiezza ad una frequenza più bassa rispetto agli altri due gruppi.
 
-Come per i falchi anche per i gufi le curve medie nei tre gruppi sembrano seguire un andamente comune, così come le deviazioni standard, qui le due curve più vicine sono invece quelle dei gruppi cold e temperate. Risalta il picco nei pressi dello zero, ciò potrebbe essere semplicemente un artefatto numerico.
+Come per i falchi anche per i gufi le curve medie nei tre gruppi sembrano seguire un andamente comune, così come le deviazioni standard, qui le due curve più simili sono invece quelle dei gruppi cold e temperate, in queso caso la curva media che presenta un picco di ampiezza "anticipato" rispetto alle altre due è quella relativa al gruppo Hot.
 
-Nei gabbiani la curva media che si discosta dalle altre è quella relativa al gruppo delle Canarie che domina le altre curve alle frequenze basse, mentre per quelle più alta è sotto tutte le altre curve medie. Si nota inolte un picco nella funzione media e un doppio picco per la deviazione standard intorno ai 3.5 khz per il gruppo Centre.
+Nei gabbiani la curva media che si discosta dalle altre è quella relativa al gruppo delle Canarie che domina le altre curve nelle frequenze basse, mentre per quelle più alta è sotto tutte le altre curve medie. Si nota inolte un picco nella funzione media e nella deviazione standard in prossimità dei 3.5 khz per il gruppo Centre.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=1\textwidth]{"../results/prima_parte/images/f_mean_sd.png"}
-\caption{Medie Funzionali degli spettrogrammi medi dei suoni degli animali per i diversi gruppi a cui è aggiunto e sottrato l'errore standard funzionale. Da sinistra verso destra falchi, gufi e gabbiani.}
+\caption{Medie Funzionali degli spettrogrammi medi dei suoni degli animali per i diversi gruppi a cui è aggiunto e sottrato l'errore standard funzionale. Dall'alto verso il basso falchi, gufi e gabbiani.}
 \label{fig-fmeansd}
 \end{figure}
 
@@ -176,7 +176,8 @@ $${#eq-fANOVA}
 Dove $y(f)$ è l'ampiezza in funzione della frequenza, $\alpha(f)$ è l'intercetta funzionale, $\beta_g(f)$ è il coefficiente associato al gruppo $g$-esimo, si impone il vincolo di somma a zero per l'identificabilità e $\epsilon(f)$ è il termine di errore omoschedastico.
 Per la rappresentazione funzionale di intercetta e coefficienti si utilizzano le stesse basi usate per rappresentare $y(f)$ e descritte nei punti precedenti, qui non si impongono vincoli ma utilizza una penalità sull'integrale del quadrato della derivata seconda per tutti i coefficienti ad eccezione dell'intercetta; per la selezione del parametro di regolazione $\lambda$ (per semplicità comune a tutti i gruppi) si considera il valore minimo di errore integrato di convalida incrociata a 5 fold (ogni insieme di convalida è campionato per strati in modo tale da mantenere la medesima proporzione di osservazioni per ciascun gruppo presente nei dati completi).
 
-Per una valutazione dell'incertezza sui coefficienti, senza assumere l'omoschedasticità del termine d'errore, si impiega una procedura di bootstrap non parametrico (stratificato per gruppo) i cui risultati sono visibili in Figura \ref{fig-fANOVA-beta} (in Figura \ref{fig-fANOVA-beta-homosched} le bande intorno ai coefficienti sono ottenute tramite la stima analitica dell'errore standard funzionale).
+Per una valutazione dell'incertezza sui coefficienti, senza assumere l'omoschedasticità del termine d'errore, si impiega una procedura di bootstrap non parametrico (stratificato per gruppo) i cui risultati sono visibili in Figura \ref{fig-fANOVA-beta} (per completezza si riporta anche la Figura \ref{fig-fANOVA-beta-homosched} in cui le bande intorno ai coefficienti sono ottenute tramite la stima analitica dell'errore standard funzionale, il risultato appare in buon accordo con quello ottenuto con le bande bootstrap); per i falchi il criterio induce dei coefficienti molto lisci rispetto agli altri due animali, ciò è probabilmente dovuto ad una maggiore variabilità delle curve all'interno di ciascun gruppo dei falchi in confronto agli altri due casi.
+
 
 
 \begin{figure}[H]
@@ -199,7 +200,8 @@ Per una valutazione dell'incertezza sui coefficienti, senza assumere l'omoscheda
 \label{fig-fANOVA-beta}
 \end{figure}
 
-Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gruppi si eseguo un test di permutazione basato sulla statistica F funzionale (Figura \ref{fig-f-anova-f-test}).
+
+Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gruppi si eseguo un test di permutazione basato sulla statistica F funzionale considerando i percentili al 95\% (Figura \ref{fig-f-anova-f-test}).
 
 \begin{figure}[H]
 \centering
@@ -208,6 +210,13 @@ Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gr
 \label{fig-f-anova-f-test}
 \end{figure}
 
+Per i falchi i coefficienti relativi ai climi Temperate e Hot sono positivi e  mostrano degli andamenti decrescenti (nella frequenza) con delle bande che comprendono lo zero per tutte le frequenze relativamente a Temperate, e lo incrociano in alcuni punti del dominio per Hot, quello relativo a Cold invece è sempre negativo crescente e le sue bande sono sempre sotto lo zero; ciò è in accordo con le analisi esplorative: le curve del gruppo Cold presentano ampiezze inferiori a quelle degli altri due gruppi e la differenza è più marcate per basse frequenze. Sembra quindi che climi freddi siano correlati con una minore presenza di versi a frequenze basse (rispetto alla media), tuttavia questa ipotetica differenza non trova riscontro nel test F che non rifiuta l'ipotesi nulla di uguaglianza dei coefficienti.
+
+Nei gufi, per frequenze medio-alte tute le bande relative ai coefficienti comprendono lo zero, poco sotto 1khz invece i gruppi Cold e Temperate presentano dei picchi negativi in dove le bande non includono lo zero (con maggiore evidenza per il gruppo Cold), il coefficiente per il gruppo Hot presenta invece un picco positivo in cui le bande non includono lo zero, questa differenza è evidenziata dal rifiuto del test F proprio in prossimità dei picchi. Secondo il modello dunque climi caldi sono correlati con una maggiore presenza di frequenze basse.  
+
+
+Nel caso dei falchi, per il coefficiente relativo al gruppo Centre non si evidenziano andamenti particolari e le bande racchiudono sempre lo zero; per i gruppi Atlantic e Mediterrean si hanno delle curve inizialmente negative e crescenti con bande che presentano una regione totalmente negativa per Atlantic e vicina a zero per Meditterean, le due curve presentano poi dei picchi positivi e un successivo calo seguito da una fase di stabilizzazione, il tutto con una differenza di fase, per frequenze medio alte le bande racchiudono sempre lo zero ad eccezione degli estremi relativi ad Atlantic.
+L'andamento più singolare è quello del coefficiente per Canary che presenta un intervallo iniziale in cui è positivo decrescente con relative bande sopra lo zero, per poi presentare un successivo picco sempre con bande di poco positive ed infine un'ultima fase con bande sotto lo zero. Il test F rifiuta l'ipotesi di uguaglianza dei coefficienti per frequenze sia basse che alte ad dovuti a Canary e probabilmente ad Atlantic. Il modello descrive, per i gabbiani delle Canarie, un impiego maggiore di frequenze basse e uno minore di frequenze alte rispetto ai gabbiani delle altre regioni.
 
 
 
@@ -267,7 +276,7 @@ chiaramente $A = (-\Phi^T \quad \mathbb{I}_j)$ e $b_0 = (-\mathbb{1} \quad \math
   \centering
   \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_gabbiani.png"}
 \end{minipage}
-\caption{Coefficienti del modelli di ANOVA funzionale, le bande intorno a ciascun coefficiente funzionale sono ottenute considerando il coefficiente funzionale aggiungendo e sottrendo due volte lo standard error funzionale. In alto da sinistra verso destra i modelli per falchi e gufi, in basso per gabbiani.}
+\caption{Coefficienti del modelli di ANOVA funzionale, le bande intorno a ciascun coefficiente funzionale sono ottenute considerando il coefficiente funzionale aggiungendo e sottrendo due volte l'errore standard funzionale. In alto da sinistra verso destra i modelli per falchi e gufi, in basso per gabbiani.}
 \label{fig-fANOVA-beta-homosched}
 \end{figure}
 
