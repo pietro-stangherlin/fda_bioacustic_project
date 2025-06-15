@@ -1154,8 +1154,10 @@ PermutFANOVA = function(factor,
     
     # Fmatr[b, ] = FtNew(yh = Yh, Y = Y, my.mean = intercept)
     
-    
-    cat(b, "\n")
+    if((b %% 100) == 0){
+      cat(b, "\n")
+    }
+
   }
   
   Y = t(eval.fd(dom, yfd)[, 1:ncol(X)])
@@ -1211,13 +1213,13 @@ FunctionalMeanBandPlot = function(fd_means,
   
   for (i in 1:length(fd_means)) {
     lines(
-      fd_means[[i]] + fd_sds[[i]],
+      fd_means[[i]] + 2 * fd_sds[[i]],
       col = i,
       lwd = my.lwd,
       lty = 2
     )
     lines(
-      fd_means[[i]] - fd_sds[[i]],
+      fd_means[[i]] - 2 * fd_sds[[i]],
       col = i,
       lwd = my.lwd,
       lty = 2
@@ -1898,15 +1900,37 @@ par(mfrow = c(1,1))
 
 dev.off()
 
-# >> Manually choosing basis -------------------------------------
+# >> Manually + LOOCV choosing basis -------------------------------------
+
+# euristically, for all species
+CHOSEN_BASIS_NUMBER = 70
+
+
+falchi_chosen_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = falchi_meanspec_freqs,
+                                                   y_matrix = falchi_meanspec_amps,
+                                                   basis_num = CHOSEN_BASIS_NUMBER,
+                                                   lambda_grid = 10^(seq(-10, -3, length = 20)),
+                                                   box_constraints = c(0,1))
+
+gufi_chosen_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = gufi_meanspec_freqs,
+                                                          y_matrix = gufi_meanspec_amps,
+                                                          basis_num = CHOSEN_BASIS_NUMBER,
+                                                          lambda_grid = 10^(seq(-10, -3, length = 20)),
+                                                          box_constraints = c(0,1))
+
+gabbiani_chosen_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = gabbiani_meanspec_freqs,
+                                                          y_matrix = gabbiani_meanspec_amps,
+                                                          basis_num = CHOSEN_BASIS_NUMBER,
+                                                          lambda_grid = 10^(seq(-10, -3, length = 20)),
+                                                          box_constraints = c(0,1))
 
 # after some tries
 
 manual_basis_pars_df = data.frame("species" = c("falchi", "gufi", "gabbiani"),
-                                  "basis_num" = c(70, 70, 70),
-                                  "lambda" = c(falchi_loocv_pen_diff$lambda_min,
-                                               gufi_loocv_pen_diff$lambda_min,
-                                               gabbiani_loocv_pen_diff$lambda_min))
+                                  "basis_num" = rep(CHOSEN_BASIS_NUMBER, 3),
+                                  "lambda" = c(falchi_chosen_loocv_pen_diff$lambda_min,
+                                               gufi_chosen_loocv_pen_diff$lambda_min,
+                                               gabbiani_chosen_loocv_pen_diff$lambda_min))
 
 save(manual_basis_pars_df,
      file = "results/prima_parte/outputs/manual_basis_pars_df.RData")
@@ -2483,6 +2507,6 @@ par(mfrow = c(1, 1))
 
 # .. Save image ----------------------------
 gc()
-save.image(file = "results/prima_parte/outputs/basis_selection_work_space.RData")
+save.image(file = "results/prima_parte/outputs/final_work_space.RData")
 
 

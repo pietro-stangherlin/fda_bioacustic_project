@@ -26,7 +26,7 @@ library(knitr)
 ```
 
 ```{r}
-load("../results/prima_parte/outputs/basis_selection_work_space.RData")
+load("../results/prima_parte/outputs/final_work_space.RData")
 ```
 
 
@@ -101,7 +101,15 @@ load("../results/prima_parte/outputs/manual_basis_pars_df.RData")
 
 
 Risultati simili si hanno anche con le altre due specie.
-Dato che i criteri di selezione automatica proposti hanno mostrato le problematiche sopra descritte si è deciso di adottare un'euristica in maniera tale che le curve mostrassero un discreto adattamento e al contempo fossero abbastanza lisce. Dopo una serie di prove si sono considerate le funzioni vincolate con penalità sulla derivata seconda riducendo il numero di basi a `r manual_basis_pars_df$basis_num[1]` per tutte le specie.
+Dato che i criteri di selezione automatica proposti hanno mostrato le problematiche sopra descritte si è deciso di adottare un'euristica in maniera tale che le curve mostrassero un discreto adattamento e al contempo fossero abbastanza lisce. Dopo una serie di prove si sono considerate le funzioni vincolate con penalità sulla derivata seconda riducendo il numero di basi a `r manual_basis_pars_df$basis_num[1]` per tutte le specie e adottando il criterio vincolato con penalità sulla derivata seconda selezionando il parametro di regolazione tramite LOOCV, in Figura \ref{fig-manual-basis} i grafici delle rappresentazioni in base.
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\textwidth]{"../results/prima_parte/images/manual_basis_selection.png"}
+\caption{Rappresentazione in basi splines vincolate in (0,1) in cui per ogni specie è indicato il numero di basi scelto euristicamente e il parametro di penalità sull'integrale del quadrato della derivata seconda selezionato tramite convalida incrociata leave-one-out (LOOCV).}
+\label{fig-manual-basis}
+\end{figure}
 
   
 ## Medie funzionali
@@ -166,9 +174,9 @@ y(f) = \alpha(f) + \sum^{G}_{g = 1} \beta_g(f) + \epsilon(f) \text{ s.t. } \sum^
 $${#eq-fANOVA}
 
 Dove $y(f)$ è l'ampiezza in funzione della frequenza, $\alpha(f)$ è l'intercetta funzionale, $\beta_g(f)$ è il coefficiente associato al gruppo $g$-esimo, si impone il vincolo di somma a zero per l'identificabilità e $\epsilon(f)$ è il termine di errore omoschedastico.
-Per la rappresentazione funzionale di intercetta e coefficienti si utilizzano le stesse basi usate per rappresentare $y(f)$ e descritte nei punti precedenti, qui non si impongono vincoli ma utilizza una penalità sull'integrale del quadrato della derivata seconda per tutti i coefficienti ad eccezione dell'intercetta; per la selezione del parametro di regolazione $\lambda$ si considera il valore minimo di errore integrato di convalida incrociata a 5 fold (ogni insieme di convalida è campionato per strati in modo tale da mantenere la medesima proporzione di osservazioni per ciascun gruppo presente nei dati completi).
+Per la rappresentazione funzionale di intercetta e coefficienti si utilizzano le stesse basi usate per rappresentare $y(f)$ e descritte nei punti precedenti, qui non si impongono vincoli ma utilizza una penalità sull'integrale del quadrato della derivata seconda per tutti i coefficienti ad eccezione dell'intercetta; per la selezione del parametro di regolazione $\lambda$ (per semplicità comune a tutti i gruppi) si considera il valore minimo di errore integrato di convalida incrociata a 5 fold (ogni insieme di convalida è campionato per strati in modo tale da mantenere la medesima proporzione di osservazioni per ciascun gruppo presente nei dati completi).
 
-Per una valutazione dell'incertezza sui coefficienti, senza assumere l'omoschedasticità del termine d'errore, si impiega una procedura di bootstrap non parametrico (stratificato per gruppo) i cui risultati sono visibili in Figura \ref{fig-fANOVA-beta}.
+Per una valutazione dell'incertezza sui coefficienti, senza assumere l'omoschedasticità del termine d'errore, si impiega una procedura di bootstrap non parametrico (stratificato per gruppo) i cui risultati sono visibili in Figura \ref{fig-fANOVA-beta} (in Figura \ref{fig-fANOVA-beta-homosched} le bande intorno ai coefficienti sono ottenute tramite la stima analitica dell'errore standard funzionale).
 
 
 \begin{figure}[H]
@@ -208,7 +216,7 @@ Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gr
 ## Conclusioni
 
 ## Appendice
-### A1
+### A1: Splines vincolate penalizzate
 Il programma di ottimizzazione quadratica nella sua forma più generale è definito come
 
 $$
@@ -240,4 +248,26 @@ $$ \begin{pmatrix}
 \end{pmatrix}$$
 
 chiaramente $A = (-\Phi^T \quad \mathbb{I}_j)$ e $b_0 = (-\mathbb{1} \quad \mathbb{0})^T$, è dunque conclusa la scrittura del problema vincolato come programma quadratico.
+
+### A2: Grafici coefficienti funzionali
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_falchi.png"}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_gufi.png"}
+\end{minipage}
+\vspace{0.5cm}
+\begin{minipage}{0.6\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_gabbiani.png"}
+\end{minipage}
+\caption{Coefficienti del modelli di ANOVA funzionale, le bande intorno a ciascun coefficiente funzionale sono ottenute considerando il coefficiente funzionale aggiungendo e sottrendo due volte lo standard error funzionale. In alto da sinistra verso destra i modelli per falchi e gufi, in basso per gabbiani.}
+\label{fig-fANOVA-beta-homosched}
+\end{figure}
 
