@@ -1,12 +1,12 @@
 rm(list = ls())
-load("audio_segments.RData")
+load("data/audio_segments_refin.RData")
 
 library(seewave)
 library(tuneR)
 library(refund)
 library(dplyr)
 
-oscillo(audio_segments[[1]][[1]]$segments[[6]])
+oscillo(audio_segments_refin[[1]][[2]]$segments[[2]])
 
 
 # Define a common time grid (normalized time from 0 to 1)
@@ -18,20 +18,20 @@ t_common <- seq(0, 1, length.out = n_points)
 normalize_time <- function(wave) {
   w <- normalize(wave, unit = "1") # normalize amplitude to [-1,1]
   y <- w@left  
-  dur <- duration(w)
+  dur <- seewave::duration(w)
   t_original <- seq(0, 1, length.out = length(y))  # map to [0,1]
   approx(t_original, y, xout = t_common)$y  # interpolate to common time grid
 }
 
 # Apply to all waveforms
-normalized_matrix <- sapply(audio_segments[[1]][[1]]$segments, normalize_time)
+normalized_matrix <- sapply(audio_segments_refin[[1]][[1]]$segments, normalize_time)
 dim(normalized_matrix)
 
-for (sample_id in 1:length(audio_segments)){
-  if(length(audio_segments[[sample_id]]) > 0){
+for (sample_id in 1:length(audio_segments_refin)){
+  if(length(audio_segments_refin[[sample_id]]) > 0){
     
-    for(i in 1:length(audio_segments[[sample_id]])){
-      audio_segments[[sample_id]][[i]]$norm_matrix = t(sapply(audio_segments[[sample_id]][[i]]$segments,
+    for(i in 1:length(audio_segments_refin[[sample_id]])){
+      audio_segments_refin[[sample_id]][[i]]$norm_matrix = t(sapply(audio_segments_refin[[sample_id]][[i]]$segments,
                                                       normalize_time))
       }
     }
@@ -40,36 +40,36 @@ for (sample_id in 1:length(audio_segments)){
 
 # TO DO: check normalization
 
-plot(audio_segments[[1]][[1]]$norm_matrix[2,], type = "l")
+plot(audio_segments_refin[[1]][[1]]$norm_matrix[2,], type = "l")
 
 
 # Modello ------------------------------------------------------
 
-temp_matr_1 <- audio_segments[[1]][[1]]$norm_matrix
+temp_matr_1 <- audio_segments_refin[[1]][[1]]$norm_matrix
 
 # concatenated super matrix
 temp_matr_Y = temp_matr_1[-1,]
 temp_matr_X = temp_matr_1[-NROW(temp_matr_1),]
 
 # initialize
-for(i in 2:length(audio_segments[[1]])){
-  temp_matr = audio_segments[[1]][[i]]$norm_matrix
+for(i in 2:length(audio_segments_refin[[1]])){
+  temp_matr = audio_segments_refin[[1]][[i]]$norm_matrix
   temp_matr_Y = rbind(temp_matr_Y, temp_matr[-1,])
   temp_matr_X = rbind(temp_matr_X, temp_matr[-NROW(temp_matr),])
 }
 
 # populate
-for (sample_id in 2:length(audio_segments)){
+for (sample_id in 2:length(audio_segments_refin)){
   
   print("sample_id")
   print(sample_id)
-  if(length(audio_segments[[sample_id]]) > 0){
+  if(length(audio_segments_refin[[sample_id]]) > 0){
     
-    for(i in 1:length(audio_segments[[sample_id]])){
-      if(length(audio_segments[[sample_id]][[i]]) > 1){
+    for(i in 1:length(audio_segments_refin[[sample_id]])){
+      if(length(audio_segments_refin[[sample_id]][[i]]) > 1){
         print("i")
         print(i)
-        temp_matr = audio_segments[[sample_id]][[i]]$norm_matrix
+        temp_matr = audio_segments_refin[[sample_id]][[i]]$norm_matrix
         print(dim(temp_matr))
         temp_matr_Y = rbind(temp_matr_Y, temp_matr[-1,])
         temp_matr_X = rbind(temp_matr_X, temp_matr[-NROW(temp_matr),])
