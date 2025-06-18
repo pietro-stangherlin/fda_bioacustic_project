@@ -35,6 +35,9 @@ sourceCpp("src/bvar_kron.cpp")
 # WARNING: maybe change the input name
 load("data/data_1.RData")
 
+
+load("results/prima_parte/outputs/final_work_space.RData")
+
 # DON'T LOAD if you want to run from the next line
 load("results/prima_parte/outputs/basis_selection_work_space.RData")
 
@@ -1411,7 +1414,7 @@ N_PERM = 1000
 
 
 # ╭──────╮
-# │Falchi│------------------------------------
+# │Gheppi│------------------------------------
 # ╰──────╯
 
 
@@ -1501,7 +1504,7 @@ falchi_meanspec_fd_diff = falchi_basis_diff$fd
 
 
 # ╭────╮
-# │Gufi│ ----------------------------------------------------------
+# │Allocchi│ ----------------------------------------------------------
 # ╰────╯
 
 dim(gufi_meanspec_amps)
@@ -1673,7 +1676,7 @@ gabbiani_meanspec_fd_diff$fdnames = list("frequency" = gabbiani_meanspec_freqs,
 # >> Regularize fit via Constraint Splines -----------------------
 
 # ╭──────╮
-# │Falchi│------------------------------------
+# │Gheppi│------------------------------------
 # ╰──────╯
 
 falchi_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = falchi_meanspec_freqs,
@@ -1716,7 +1719,7 @@ par(mfrow = c(1,1))
 
 
 # ╭────╮
-# │Gufi│ ----------------------------------------------------------
+# │Allocchi│ ----------------------------------------------------------
 # ╰────╯
 
 gufi_loocv_pen_int = LOOCVConstraintSplinesInt(x_grid = gufi_meanspec_freqs,
@@ -1797,7 +1800,7 @@ par(mfrow = c(1,1))
 
 # .. parameters table ------------------------------------
 
-representation_selection_df = data.frame("animal" = c(rep("falchi", 4), rep("gufi", 4), rep("gabbiani", 4)),
+representation_selection_df = data.frame("animal" = c(rep("gheppi", 4), rep("allocchi", 4), rep("gabbiani", 4)),
                                          "constraint" = rep(c(FALSE, FALSE, TRUE, TRUE), 3) ,
                                          "penalty type" = rep(c("INT", "DIFF", "INT", "DIFF"), 3) ,
                                          "min error parameter" = c(falchi_nbasis_gcv$best_n_basis,
@@ -1825,7 +1828,7 @@ save(representation_selection_df,
 # here join is meant same species but different criterions
 
 # ╭──────╮
-# │Falchi│------------------------------------
+# │Gheppi│------------------------------------
 # ╰──────╯
 
 png("results/prima_parte/images/falchi_fits_crit.png",
@@ -1834,24 +1837,24 @@ png("results/prima_parte/images/falchi_fits_crit.png",
 # compare fitting
 par(mfrow = c(2, 2))
 
-plot(falchi_meanspec_fd_int, main = paste0("Falchi GCV Int - nbasis: ",
+plot(falchi_meanspec_fd_int, main = paste0("Gheppi GCV Int - nbasis: ",
                                            falchi_meanspec_fd_int$basis$nbasis, collapse = "")) # border problem
-plot(falchi_meanspec_fd_diff, main = paste0("Falchi GCV Diff - log(lambda): ",
+plot(falchi_meanspec_fd_diff, main = paste0("Gheppi GCV Diff - log(lambda): ",
                                             round(log(falchi_LD_gcv$best_lambda, base = 10),2), collapse = "")) # choose this one
 
 
 plot(falchi_meanspec_fd_con_int,
-     main = paste0("Falchi Constraint LOOCV Int - nbasis: ",
+     main = paste0("Gheppi Constraint LOOCV Int - nbasis: ",
                    falchi_loocv_pen_int$basis_min, collapse = ""))
 plot(falchi_meanspec_fd_con_diff,
-     main = paste0("Falchi Constraint LOOCV Diff - log(lambda): ",
+     main = paste0("Gheppi Constraint LOOCV Diff - log(lambda): ",
                    round(log(falchi_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
 par(mfrow = c(1,1))
 
 dev.off()
 
 # ╭────╮
-# │Gufi│ ----------------------------------------------------------
+# │Allocchi│ ----------------------------------------------------------
 # ╰────╯
 
 png("results/prima_parte/images/gufi_fits_crit.png",
@@ -1859,17 +1862,17 @@ png("results/prima_parte/images/gufi_fits_crit.png",
 
 par(mfrow = c(2, 2))
 
-plot(gufi_meanspec_fd_int, main = paste0("Gufi GCV Int - nbasis: ",
+plot(gufi_meanspec_fd_int, main = paste0("Allocchi GCV Int - nbasis: ",
                                            gufi_meanspec_fd_int$basis$nbasis, collapse = "")) # border problem
-plot(gufi_meanspec_fd_diff, main = paste0("Gufi GCV Diff - log(lambda): ",
+plot(gufi_meanspec_fd_diff, main = paste0("Allocchi GCV Diff - log(lambda): ",
                                             round(log(gufi_LD_gcv$best_lambda, base = 10),2), collapse = "")) # choose this one
 
 
 plot(gufi_meanspec_fd_con_int,
-     main = paste0("Gufi Constraint LOOCV Int - nbasis: ",
+     main = paste0("Allocchi Constraint LOOCV Int - nbasis: ",
                    gufi_loocv_pen_int$basis_min, collapse = ""))
 plot(gufi_meanspec_fd_con_diff,
-     main = paste0("Gufi Constraint LOOCV Diff - log(lambda): ",
+     main = paste0("Allocchi Constraint LOOCV Diff - log(lambda): ",
                    round(log(gufi_loocv_pen_diff$lambda_min, base = 10),2), collapse = ""))
 par(mfrow = c(1,1))
 
@@ -1926,7 +1929,7 @@ gabbiani_chosen_loocv_pen_diff = LOOCVConstraintSplinesDiff(x_grid = gabbiani_me
 
 # after some tries
 
-manual_basis_pars_df = data.frame("species" = c("falchi", "gufi", "gabbiani"),
+manual_basis_pars_df = data.frame("species" = c("gheppi", "allocchi", "gabbiani"),
                                   "basis_num" = rep(CHOSEN_BASIS_NUMBER, 3),
                                   "lambda" = c(falchi_chosen_loocv_pen_diff$lambda_min,
                                                gufi_chosen_loocv_pen_diff$lambda_min,
@@ -1963,13 +1966,13 @@ png("results/prima_parte/images/manual_basis_selection.png",
 par(mfrow = c(3, 1))
 
 plot(falchi_meanspec_fd_con_diff,
-     main = paste0("Falchi Constraint Manual; ",
+     main = paste0("Gheppi Constraint Manual; ",
                    "; nbasis = ",  manual_basis_pars_df[manual_basis_pars_df$species == "falchi","basis_num"],
                    "; log-lambda =",
                    round(log(manual_basis_pars_df[manual_basis_pars_df$species == "falchi","lambda"], base = 10),2), collapse = ""))
 
 plot(gufi_meanspec_fd_con_diff,
-     main = paste0("Gufi Constraint Manual; ",
+     main = paste0("Allocchi Constraint Manual; ",
                    "; nbasis = ", manual_basis_pars_df[manual_basis_pars_df$species == "gufi","basis_num"], 
                    "; log-lambda =",
                    round(log(manual_basis_pars_df[manual_basis_pars_df$species == "gufi","lambda"], base = 10),2), collapse = ""))
@@ -1993,7 +1996,7 @@ save.image(file = "results/prima_parte/outputs/basis_selection_work_space.RData"
 # >>f Means ---------------------------------
 
 # ╭──────╮
-# │Falchi│------------------------------------
+# │Gheppi│------------------------------------
 # ╰──────╯
 
 
@@ -2009,7 +2012,7 @@ falchi_meanspec_fd_sd = lapply(
 
 
 # ╭────╮
-# │Gufi│ ----------------------------------------------------------
+# │Allocchi│ ----------------------------------------------------------
 # ╰────╯
 
 gufi_meanspec_fd_mean = lapply(
@@ -2049,7 +2052,7 @@ par(mfrow = c(3,1))
 
 FunctionalMeanBandPlot(fd_means = falchi_meanspec_fd_mean,
                        fd_sds = falchi_meanspec_fd_sd,
-                       my.main = "Medie Funzionali ± Sd Falchi",
+                       my.main = "Medie Funzionali ± Sd Gheppi",
                        my.ylim = c(0,0.8),
                        my.lwd = 2,
                        my.xlab = "Frequenza",
@@ -2061,7 +2064,7 @@ FunctionalMeanBandPlot(fd_means = falchi_meanspec_fd_mean,
 
 FunctionalMeanBandPlot(fd_means = gufi_meanspec_fd_mean,
                        fd_sds = gufi_meanspec_fd_sd,
-                       my.main = "Medie Funzionali ± Sd Gufi",
+                       my.main = "Medie Funzionali ± Sd Allocchi",
                        my.ylim = c(0,1),
                        my.lwd = 2,
                        my.xlab = "Frequenza",
@@ -2101,9 +2104,9 @@ png("results/prima_parte/images/f_pca_explained_var.png",
 
 par(mfrow = c(3, 1))
 plot(cumsum(falchi_pcf$varprop), type = "b",
-     pch = 16, main = "fPCA varianza spiegata cumulata Falchi")
+     pch = 16, main = "fPCA varianza spiegata cumulata Gheppi")
 plot(cumsum(gufi_pcf$varprop), type = "b",
-     pch = 16, main = "fPCA varianza spiegata cumulata Gufi")
+     pch = 16, main = "fPCA varianza spiegata cumulata Allocchi")
 plot(cumsum(gabbiani_pcf$varprop), type = "b",
      pch = 16, main = "fPCA varianza spiegata cumulata Gabbiani")
 
@@ -2140,11 +2143,11 @@ png("results/prima_parte/images/f_pca_scores.png",
 
 par(mfrow = c(3, 1))
 plot(falchi_pcf$scores, type = "p", col = falchi$Climate_zone, pch = 16,
-     main = "fPCA punteggi Falchi")
+     main = "fPCA punteggi Gheppi")
 legend("topright", legend = levels(falchi$Climate_zone), col = 1:3, pch = 16,
        bty = "n")
 plot(gufi_pcf$scores, type = "p", col = gufi$Climate_zone, pch = 16,
-     main = "fPCA punteggi Gufi")
+     main = "fPCA punteggi Allocchi")
 legend("topright", legend = levels(gufi$Climate_zone), col = 1:3, pch = 16,
        bty = "n")
 plot(gabbiani_pcf$scores, type = "p", col = gabbiani$Cluster, pch = 16,
@@ -2162,7 +2165,7 @@ dev.off()
 # >>f ANOVA ---------------------------------
 
 # ╭──────╮
-# │Falchi│------------------------------------
+# │Gheppi│------------------------------------
 # ╰──────╯
 
 # DON'T LOAD if you want to run
@@ -2229,7 +2232,7 @@ gc()
 fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
                  my.betastderrlist = falchi_anova_model$beta_se$betastderrlist,
                  my.factor = falchi$Climate_zone,
-                 my.name = "Falchi",
+                 my.name = "Gheppi",
                  save_path = "results/prima_parte/images/f_beta_falchi.png",
                  my.width = MY.WIDTH,
                  my.height = MY.HEIGHT,
@@ -2240,7 +2243,7 @@ fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
 
 PlotBetaWithQuantiles(original_fit = boot_fanova_beta_falchi$original_fit_beta,
                       quantile_betas = boot_fanova_beta_falchi$quantile_betas,
-                      my.name = "Falchi",
+                      my.name = "Gheppi",
                       save_path = "results/prima_parte/images/f_beta_quant_falchi.png",
                       my.width = MY.WIDTH,
                       my.height = MY.HEIGHT,
@@ -2248,7 +2251,7 @@ PlotBetaWithQuantiles(original_fit = boot_fanova_beta_falchi$original_fit_beta,
                                              matrix(2:5, 2, 2)))
 
 # ╭────╮
-# │Gufi│ ----------------------------------------------------------
+# │Allocchi│ ----------------------------------------------------------
 # ╰────╯
 
 load("results/prima_parte/outputs/cv_fanova_res_gufi.RData")
@@ -2311,7 +2314,7 @@ gc()
 fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
                  my.betastderrlist = gufi_anova_model$beta_se$betastderrlist,
                  my.factor = gufi$Climate_zone,
-                 my.name = "Gufi",
+                 my.name = "Allocchi",
                  save_path = "results/prima_parte/images/f_beta_gufi.png",
                  my.width = MY.WIDTH,
                  my.height = MY.HEIGHT,
@@ -2321,7 +2324,7 @@ fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
 
 PlotBetaWithQuantiles(original_fit = boot_fanova_beta_gufi$original_fit_beta,
                       quantile_betas = boot_fanova_beta_gufi$quantile_betas,
-                      my.name = "Gufi",
+                      my.name = "Allocchi",
                       save_path = "results/prima_parte/images/f_beta_quant_gufi.png",
                       my.width = MY.WIDTH,
                       my.height = MY.HEIGHT,
@@ -2427,14 +2430,14 @@ plot(cv_fanova_res_falchi$lambda_grid,
      pch = 16, type = "b",
      xlab = "lambda",
      ylab = "err",
-     main = "Errore integrato di Cv - Falchi")
+     main = "Errore integrato di Cv - Gheppi")
 
 plot(cv_fanova_res_gufi$lambda_grid,
      cv_fanova_res_gufi$cv_error,
      pch = 16, type = "b",
      xlab = "lambda",
      ylab = "err",
-     main = "Errore integrato di Cv - Gufi")
+     main = "Errore integrato di Cv - Allocchi")
 
 
 plot(cv_fanova_res_gabbiani$lambda_grid,
@@ -2461,7 +2464,7 @@ plot(
   ylim = range(c(perm_fanova_res_falchi$fobs,perm_fanova_res_falchi$qFmax)),
   type = 'l',
   lwd = 2,
-  main = paste0("Ftest Falchi", "; permutation number = ", N_PERM),
+  main = paste0("Ftest Gheppi", "; permutation number = ", N_PERM),
   xlab = "Frequency",
   ylab = "F"
 )
@@ -2476,7 +2479,7 @@ plot(
   ylim = range(c(perm_fanova_res_gufi$fobs,perm_fanova_res_gufi$qFmax)),
   type = 'l',
   lwd = 2,
-  main = paste0("Ftest Gufi", "; permutation number = ", N_PERM),
+  main = paste0("Ftest Allocchi", "; permutation number = ", N_PERM),
   xlab = "Frequency",
   ylab = "F"
 )

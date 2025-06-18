@@ -30,27 +30,6 @@ load("../results/prima_parte/outputs/final_work_space.RData")
 ```
 
 
-
-## Introduzione
-
-## Obbiettivi
-
--   Analisi esplorative funzionali
-
--   ANOVA funzionale: confronto tra spettri di frequenze per diverse specie di uccelli
-
--   Modello funzione su funzione: si è interessati a valutare se esistano delle relazioni tra ciascun suono emesso ed il suono precedente
-
-## Dati
-
-I dati considerati sono presenti sul portale [xeno-canto](https://xeno-canto.org/). Per ogni audio è disponibile la specie di uccello e le coordinate geografiche del rilevamento.
-
-## Operazioni preventive
-
--   Passaggio al dominio della frequenza tramite spettro medio
-
--   Normalizzazione delle ampiezze
-
 ### Rappresentazione funzionale
 
 #### Spline penalizzate e vincolate
@@ -112,7 +91,7 @@ Dato che i criteri di selezione automatica proposti hanno mostrato le problemati
 \end{figure}
 
   
-## Medie funzionali
+### Medie funzionali
 
 In Figura \ref{fig-fmeansd} si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
 
@@ -131,7 +110,7 @@ Nei gabbiani la curva media che si discosta dalle altre è quella relativa al gr
 
 
 
-## PCA funzionale
+### PCA funzionale
 
 Si effettua un'analisi delle componenti principali funzionali, sia per avere delle ulteriori informazioni descrittive sia per vedere se i punteggi di tali componenti individuano o meno dei cluster di osservazioni potenzialmente diversi da quelli scelti in questa sede.
 
@@ -165,7 +144,7 @@ Considerando le prime due armoniche (ma un risultato analogo si ottiene anche co
 
 
 
-## ANOVA funzionale
+### ANOVA funzionale
 
 Per ciascun animale si considera un modello di ANOVA funzionale:
 
@@ -218,33 +197,29 @@ Nei gufi, per frequenze medio-alte tute le bande relative ai coefficienti compre
 Nel caso dei falchi, per il coefficiente relativo al gruppo Centre non si evidenziano andamenti particolari e le bande racchiudono sempre lo zero; per i gruppi Atlantic e Mediterrean si hanno delle curve inizialmente negative e crescenti con bande che presentano una regione totalmente negativa per Atlantic e vicina a zero per Meditterean, le due curve presentano poi dei picchi positivi e un successivo calo seguito da una fase di stabilizzazione, il tutto con una differenza di fase, per frequenze medio alte le bande racchiudono sempre lo zero ad eccezione degli estremi relativi ad Atlantic.
 L'andamento più singolare è quello del coefficiente per Canary che presenta un intervallo iniziale in cui è positivo decrescente con relative bande sopra lo zero, per poi presentare un successivo picco sempre con bande di poco positive ed infine un'ultima fase con bande sotto lo zero. Il test F rifiuta l'ipotesi di uguaglianza dei coefficienti per frequenze sia basse che alte ad dovuti a Canary e probabilmente ad Atlantic. Il modello descrive, per i gabbiani delle Canarie, un impiego maggiore di frequenze basse e uno minore di frequenze alte rispetto ai gabbiani delle altre regioni.
 
-
-
-## Modello funzione su funzione
-
 ## Conclusioni
 
 ## Appendice
-### A1: Splines vincolate penalizzate
+### Splines vincolate penalizzate
 Il programma di ottimizzazione quadratica nella sua forma più generale è definito come
 
 $$
-\text{min}_{b}(-d^Tb + 1/2b^TDb) \text{ s.t. } A^Tb \geq b_0
+\text{min}_{b}(-d^\topb + 1/2b^\topDb) \text{ s.t. } A^\topb \geq b_0
 $${#eq-qp}
 Per una singola osservazione funzionale, per il lisciamento tramite scrittura in funzioni di base la funzione da minimizzare rispetto a $b$ è
 
 $$
-(y - \Phi b)^T(y - \Phi b) + \lambda b^T Pb
+(y - \Phi b)^\top(y - \Phi b) + \lambda b^\top Pb
 $${#eq-basisloss}
 dove $y$ è il vettore dei punti osservati $\Phi$ è la matrice delle funzioni di base valutate nei punti osservati del dominio della curva e $b$ è il vettore dei coefficienti, $P$ è una generica matrice di penalità e $\lambda > 0$ indica l'entità della penalizzaione (per un criterio non penalizzato è sufficiente porre $\lambda = 0$).
 Minizzare l' @eq-basisloss equivale a minizzare 
 
 $$
--y^T \Phi b + b^T \frac{1}{2}(\Phi^T \Phi + \lambda P) b
+-y^\top \Phi b + b^\top \frac{1}{2}(\Phi^\top \Phi + \lambda P) b
 $${#eq-basislossexp}
 
-Da cui $d = y^T \Phi$ e $D = \Phi^T \Phi + \lambda P$.
-Usando la definizione di scrittura in basi il vincolo è $0 \leq \phi^T(f)b \leq 1 \quad \forall f$, in pratica si discretizza $\phi(f_j)$ per $j = 1,..,J$.
+Da cui $d = y^\top \Phi$ e $D = \Phi^\top \Phi + \lambda P$.
+Usando la definizione di scrittura in basi il vincolo è $0 \leq \phi^\top(f)b \leq 1 \quad \forall f$, in pratica si discretizza $\phi(f_j)$ per $j = 1,..,J$.
 Sia $\Phi_J$ la matrice di funzioni di base valuate su griglia discretizzata: deve valere $\Phi_J b \leq \mathbb{1}$ o equivalentemente $-\Phi_J b \geq -\mathbb{1}$ dove con questa scrittura si intende che la disuguaglianza deve valere per ogni elemento dei vettori.
 Similmente, per vincolo di positività si ha $\Phi_J b \geq \mathbb{0}$, tuttavia, poichè per costruzione le basi bspline sono sempre non negative è sufficiente imporre $\mathbb{I}_J b \geq \mathbb{0}$ con $\mathbb{I}_J$ matrice identità. Combinando le due espressioni si ottiene 
 
@@ -256,7 +231,7 @@ $$ \begin{pmatrix}
 \mathbb{0}
 \end{pmatrix}$$
 
-chiaramente $A = (-\Phi^T \quad \mathbb{I}_j)$ e $b_0 = (-\mathbb{1} \quad \mathbb{0})^T$, è dunque conclusa la scrittura del problema vincolato come programma quadratico.
+chiaramente $A = (-\Phi^\top \quad \mathbb{I}_j)$ e $b_0 = (-\mathbb{1} \quad \mathbb{0})^\top$, è dunque conclusa la scrittura del problema vincolato come programma quadratico.
 
 ### A2: Grafici coefficienti funzionali
 
