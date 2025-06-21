@@ -190,9 +190,10 @@ Nel caso dei falchi, per il coefficiente relativo al gruppo Centre non si eviden
 
 ## Conclusioni
 
-L'analisi degli spettogrammi medi delle diverse specie di uccelli tramite metodi funzionali ha presentato diverse problematiche legate alla tipologia dei dati quali l'impossibilità di impiegare il criterio GCV ed espressioni analitiche per gli errori standard dei coefficienti funzionali a causa della mancanza della stima analitica a causa del vincolo; i dati in questione sono inoltre caratterizzati da alta variabilità.
+L'analisi degli spettogrammi medi delle diverse specie di uccelli tramite metodi funzionali ha presentato diverse problematiche legate alla tipologia dei dati quali l'impossibilità di impiegare il criterio GCV ed espressioni analitiche per gli errori standard dei coefficienti funzionali a causa della mancanza della stima analitica dovuta al vincolo; i dati in questione sono inoltre caratterizzati da alta variabilità.
 
-Benchè l'analisi delle componenti principali funzionali non abbia evidenziato nessun cluster il modello di ANOVA funzionale ha evidenziato, per allocchi e gabbiani, delle regioni delle spettogramma con delle differenze significative tra alcuni dei gruppi scelti.
+Benchè l'analisi delle componenti principali funzionali non abbia evidenziato nessun cluster il modello di ANOVA funzionale ha evidenziato, per allocchi e gabbiani, delle regioni delle spettogramma con delle differenze significative tra alcuni dei gruppi scelti. In particolare per gli allocchi si sono trovati scostamenti significativi tra regioni fredde e calde, mentre per i gabbiani tra il cluster delle Canarie ed i cluster Mediterranei ed atlantici.
+Sarebbe interessante indagare se le differenze rinvenute rispecchiano delle reali differenze di comportamento e comunicazione o se invece sono causati da soli fattori esterni, se 
 
 
 ## Appendice
