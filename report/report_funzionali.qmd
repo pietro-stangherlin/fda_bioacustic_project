@@ -29,36 +29,26 @@ library(knitr)
 load("../results/prima_parte/outputs/final_work_space.RData")
 ```
 
-
 ### Rappresentazione funzionale
 
 #### Spline penalizzate e vincolate
 
-Per le curve di Ampiezza in funzione della frequenza si è scelta una rappresentazione in base bspline di grado 3.
-Inizialmente si sono considerate due penalizzazioni: la prima sul numero di basi e la seconda sull'integrale del quadrato della derivata seconda (per un numero di basi abbastanza alto fissato), per entrambi i casi si è considerato come riferimento il parametro che minizzasse il criterio di GCV.
-Tuttavia questi due criteri non permettono il rispetto dei vincoli: 
-  1) di non negatività della curva
-  2) di ampiezza non superiore a 1 (a causa della normalizzazione).
-  
-Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica ([A1](#A1: Splines vincolate penalizzate)) per cui sono disponibili delle routine.
+Per le curve di Ampiezza in funzione della frequenza si è scelta una rappresentazione in base bspline di grado 3. Inizialmente si sono considerate due penalizzazioni: la prima sul numero di basi e la seconda sull'integrale del quadrato della derivata seconda (per un numero di basi abbastanza alto fissato), per entrambi i casi si è considerato come riferimento il parametro che minizzasse il criterio di GCV. Tuttavia questi due criteri non permettono il rispetto dei vincoli: 1) di non negatività della curva 2) di ampiezza non superiore a 1 (a causa della normalizzazione).
+
+Per ciascuno dei due criteri sopra menzionati si sono quindi introdotti i vincoli nel problema di ottimizzazione che può essere scritto come un programma di programmazione quadratica ([A1](#A1:%20Splines%20vincolate%20penalizzate)) per cui sono disponibili delle routine.
 
 #### Risultati
 
-Introdurre i vincoli non dà luogo ad uno stimatore lineare in $y$, non è quindi possibile usare GCV come criterio per la selezione dei parametri di regolazione, si impiega invece una procedura di convalida incrociata "Leave One Out" (LOOCV).
-A titolo esemplificativo si riportano le curve relative ai gufi con i quattro metodi: GCV senza vincolo e LOOCV con vincolo; in  @tab-representation-selection-df sono riportate le specifiche di ciascun metodo.
-
+Introdurre i vincoli non dà luogo ad uno stimatore lineare in $y$, non è quindi possibile usare GCV come criterio per la selezione dei parametri di regolazione, si impiega invece una procedura di convalida incrociata "Leave One Out" (LOOCV). A titolo esemplificativo si riportano le curve relative ai gufi con i quattro metodi: GCV senza vincolo e LOOCV con vincolo; in @tab-representation-selection-df sono riportate le specifiche di ciascun metodo.
 
 ```{r}
 load("../results/prima_parte/outputs/representation_selection_df.RData")
 ```
 
-
 ```{r, #tab-representation-selection-df, include= TRUE}
 kable(representation_selection_df,
       caption = "Tabella le cui colonne da sinistra verso destra contengono rispettivamente l'animale considerato, se il metodo di stima è vincolato in (0,1) (TRUE) oppure no (FALSE), il tipo di penalità: numero intero di basi (INT) o penalità sull'integrale della derivata seconda (DIFF), il parametro ottimo selezionato (numero di basi per penalità INT e lambda per penalità DIFF) e il numero di punti (unici) del dominio.")
 ```
-
-
 
 \begin{figure}[H]
 \centering
@@ -67,21 +57,17 @@ kable(representation_selection_df,
 \label{fig-gufi-fits-crit}
 \end{figure}
 
-
 Esaminando la Figura \ref{fig-gufi-fits-crit} si evidenziano diverse problematiche:
 
-  - nel caso senza vincoli e con penalizzazione solo sul numero di basi (grafico in alto a sinistra) si osserva che non sono rispettati i vincoli di non negatività e di ampiezza inferiore ad uno, problema presente anche con penalizzazione sull'integrale della derivata seconda al quadrato (grafico in alto a destra).
-  
-- i vincoli migliorano chiaramente la rappresentazione funzionale, tuttavia, il numero di basi che minimizza LOOCV (grafico in basso a sinistra) è probabilmente troppo piccolo in quanto alcune funzioni hanno dei picchi troppo bassi, anche qui si potrebbe pensare di aumentare il numero di basi; nell'ultimo caso (penalizzaione sull'integrale della derivata seconda al quadrato) (grafico in basso a destra) una possibile critica è che le funzioni non siano abbastanza lisce.
+-   nel caso senza vincoli e con penalizzazione solo sul numero di basi (grafico in alto a sinistra) si osserva che non sono rispettati i vincoli di non negatività e di ampiezza inferiore ad uno, problema presente anche con penalizzazione sull'integrale della derivata seconda al quadrato (grafico in alto a destra).
+
+-   i vincoli migliorano chiaramente la rappresentazione funzionale, tuttavia, il numero di basi che minimizza LOOCV (grafico in basso a sinistra) è probabilmente troppo piccolo in quanto alcune funzioni hanno dei picchi troppo bassi, anche qui si potrebbe pensare di aumentare il numero di basi; nell'ultimo caso (penalizzaione sull'integrale della derivata seconda al quadrato) (grafico in basso a destra) una possibile critica è che le funzioni non siano abbastanza lisce.
 
 ```{r}
 load("../results/prima_parte/outputs/manual_basis_pars_df.RData")
 ```
 
-
-Risultati simili si hanno anche con le altre due specie.
-Dato che i criteri di selezione automatica proposti hanno mostrato le problematiche sopra descritte si è deciso di adottare un'euristica in maniera tale che le curve mostrassero un discreto adattamento e al contempo fossero abbastanza lisce. Dopo una serie di prove si sono considerate le funzioni vincolate con penalità sulla derivata seconda riducendo il numero di basi a `r manual_basis_pars_df$basis_num[1]` per tutte le specie e adottando il criterio vincolato con penalità sulla derivata seconda selezionando il parametro di regolazione tramite LOOCV, in Figura \ref{fig-manual-basis} i grafici delle rappresentazioni in base.
-
+Risultati simili si hanno anche con le altre due specie. Dato che i criteri di selezione automatica proposti hanno mostrato le problematiche sopra descritte si è deciso di adottare un'euristica in maniera tale che le curve mostrassero un discreto adattamento e al contempo fossero abbastanza lisce. Dopo una serie di prove si sono considerate le funzioni vincolate con penalità sulla derivata seconda riducendo il numero di basi a `r manual_basis_pars_df$basis_num[1]` per tutte le specie e adottando il criterio vincolato con penalità sulla derivata seconda selezionando il parametro di regolazione tramite LOOCV, in Figura \ref{fig-manual-basis} i grafici delle rappresentazioni in base.
 
 \begin{figure}[H]
 \centering
@@ -90,7 +76,6 @@ Dato che i criteri di selezione automatica proposti hanno mostrato le problemati
 \label{fig-manual-basis}
 \end{figure}
 
-  
 ### Medie funzionali
 
 In Figura \ref{fig-fmeansd} si riportano le medie e le deviazioni standard funzionali per tutti i gruppi di ciascun animale. Le deviazioni standard sono circa dello stesso ordine delle medie per quasi tutti i gruppi e tutti i punti.
@@ -108,8 +93,6 @@ Nei gabbiani la curva media che si discosta dalle altre è quella relativa al gr
 \label{fig-fmeansd}
 \end{figure}
 
-
-
 ### PCA funzionale
 
 Si effettua un'analisi delle componenti principali funzionali, sia per avere delle ulteriori informazioni descrittive sia per vedere se i punteggi di tali componenti individuano o meno dei cluster di osservazioni potenzialmente diversi da quelli scelti in questa sede.
@@ -122,7 +105,6 @@ Inizialmente si fissa un numero di armoniche pari a 10 (Figura \ref{fig-f_pca_ex
 \caption{Varianza spiegata cumulata per le prime 10 componenti funzionali principali degli spettrogrammi dei suoni (dall'alto in basso) di falchi, gufi e gabbiani.}
 \label{fig-f_pca_explained_var}
 \end{figure}
-
 
 Focalizzandosi sulle prime tre armoniche (Figura \ref{fig-f-pca-harmonics}) si può vedere che, per tutti gli animali, la prima armonica segue abbastanza regolarmente la forma della media funzionale, la seconda presenta un andamento opposto alla media e la terza varia molto tra i diversi animali e non è di facile intepretazione.
 
@@ -142,22 +124,17 @@ Considerando le prime due armoniche (ma un risultato analogo si ottiene anche co
 \label{fig-f-pca-scores}
 \end{figure}
 
-
-
 ### ANOVA funzionale
 
 Per ciascun animale si considera un modello di ANOVA funzionale:
 
 $$
 y(f) = \alpha(f) + \sum^{G}_{g = 1} \beta_g(f) + \epsilon(f) \text{ s.t. } \sum^{G}_{g = 1} \beta_g(f) = 0 \text{ } \forall f
-$${#eq-fANOVA}
+$$ {#eq-fANOVA}
 
-Dove $y(f)$ è l'ampiezza in funzione della frequenza, $\alpha(f)$ è l'intercetta funzionale, $\beta_g(f)$ è il coefficiente associato al gruppo $g$-esimo, si impone il vincolo di somma a zero per l'identificabilità e $\epsilon(f)$ è il termine di errore omoschedastico.
-Per la rappresentazione funzionale di intercetta e coefficienti si utilizzano le stesse basi usate per rappresentare $y(f)$ e descritte nei punti precedenti, qui non si impongono vincoli ma utilizza una penalità sull'integrale del quadrato della derivata seconda per tutti i coefficienti ad eccezione dell'intercetta; per la selezione del parametro di regolazione $\lambda$ (per semplicità comune a tutti i gruppi) si considera il valore minimo di errore integrato di convalida incrociata a 5 fold (ogni insieme di convalida è campionato per strati in modo tale da mantenere la medesima proporzione di osservazioni per ciascun gruppo presente nei dati completi).
+Dove $y(f)$ è l'ampiezza in funzione della frequenza, $\alpha(f)$ è l'intercetta funzionale, $\beta_g(f)$ è il coefficiente associato al gruppo $g$-esimo, si impone il vincolo di somma a zero per l'identificabilità e $\epsilon(f)$ è il termine di errore omoschedastico. Per la rappresentazione funzionale di intercetta e coefficienti si utilizzano le stesse basi usate per rappresentare $y(f)$ e descritte nei punti precedenti, qui non si impongono vincoli ma utilizza una penalità sull'integrale del quadrato della derivata seconda per tutti i coefficienti ad eccezione dell'intercetta; per la selezione del parametro di regolazione $\lambda$ (per semplicità comune a tutti i gruppi) si considera il valore minimo di errore integrato di convalida incrociata a 5 fold (ogni insieme di convalida è campionato per strati in modo tale da mantenere la medesima proporzione di osservazioni per ciascun gruppo presente nei dati completi).
 
 Per una valutazione dell'incertezza sui coefficienti, senza assumere l'omoschedasticità del termine d'errore, si impiega una procedura di bootstrap non parametrico (stratificato per gruppo) i cui risultati sono visibili in Figura \ref{fig-fANOVA-beta} (per completezza si riporta anche la Figura \ref{fig-fANOVA-beta-homosched} in cui le bande intorno ai coefficienti sono ottenute tramite la stima analitica dell'errore standard funzionale, il risultato appare in buon accordo con quello ottenuto con le bande bootstrap); per i falchi il criterio induce dei coefficienti molto lisci rispetto agli altri due animali, ciò è probabilmente dovuto ad una maggiore variabilità delle curve all'interno di ciascun gruppo dei falchi in confronto agli altri due casi.
-
-
 
 \begin{figure}[H]
 \centering
@@ -179,8 +156,7 @@ Per una valutazione dell'incertezza sui coefficienti, senza assumere l'omoscheda
 \label{fig-fANOVA-beta}
 \end{figure}
 
-
-Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gruppi si eseguo un test di permutazione basato sulla statistica F funzionale considerando i percentili al 95\% (Figura \ref{fig-f-anova-f-test}).
+Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gruppi si eseguo un test di permutazione basato sulla statistica F funzionale considerando i percentili al 95% (Figura \ref{fig-f-anova-f-test}).
 
 \begin{figure}[H]
 \centering
@@ -189,39 +165,38 @@ Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gr
 \label{fig-f-anova-f-test}
 \end{figure}
 
-Per i falchi i coefficienti relativi ai climi Temperate e Hot sono positivi e  mostrano degli andamenti decrescenti (nella frequenza) con delle bande che comprendono lo zero per tutte le frequenze relativamente a Temperate, e lo incrociano in alcuni punti del dominio per Hot, quello relativo a Cold invece è sempre negativo crescente e le sue bande sono sempre sotto lo zero; ciò è in accordo con le analisi esplorative: le curve del gruppo Cold presentano ampiezze inferiori a quelle degli altri due gruppi e la differenza è più marcate per basse frequenze. Sembra quindi che climi freddi siano correlati con una minore presenza di versi a frequenze basse (rispetto alla media), tuttavia questa ipotetica differenza non trova riscontro nel test F che non rifiuta l'ipotesi nulla di uguaglianza dei coefficienti.
+Per i falchi i coefficienti relativi ai climi Temperate e Hot sono positivi e mostrano degli andamenti decrescenti (nella frequenza) con delle bande che comprendono lo zero per tutte le frequenze relativamente a Temperate, e lo incrociano in alcuni punti del dominio per Hot, quello relativo a Cold invece è sempre negativo crescente e le sue bande sono sempre sotto lo zero; ciò è in accordo con le analisi esplorative: le curve del gruppo Cold presentano ampiezze inferiori a quelle degli altri due gruppi e la differenza è più marcate per basse frequenze. Sembra quindi che climi freddi siano correlati con una minore presenza di versi a frequenze basse (rispetto alla media), tuttavia questa ipotetica differenza non trova riscontro nel test F che non rifiuta l'ipotesi nulla di uguaglianza dei coefficienti.
 
-Nei gufi, per frequenze medio-alte tute le bande relative ai coefficienti comprendono lo zero, poco sotto 1khz invece i gruppi Cold e Temperate presentano dei picchi negativi in dove le bande non includono lo zero (con maggiore evidenza per il gruppo Cold), il coefficiente per il gruppo Hot presenta invece un picco positivo in cui le bande non includono lo zero, questa differenza è evidenziata dal rifiuto del test F proprio in prossimità dei picchi. Secondo il modello dunque climi caldi sono correlati con una maggiore presenza di frequenze basse.  
+Nei gufi, per frequenze medio-alte tute le bande relative ai coefficienti comprendono lo zero, poco sotto 1khz invece i gruppi Cold e Temperate presentano dei picchi negativi in dove le bande non includono lo zero (con maggiore evidenza per il gruppo Cold), il coefficiente per il gruppo Hot presenta invece un picco positivo in cui le bande non includono lo zero, questa differenza è evidenziata dal rifiuto del test F proprio in prossimità dei picchi. Secondo il modello dunque climi caldi sono correlati con una maggiore presenza di frequenze basse.
 
-
-Nel caso dei falchi, per il coefficiente relativo al gruppo Centre non si evidenziano andamenti particolari e le bande racchiudono sempre lo zero; per i gruppi Atlantic e Mediterrean si hanno delle curve inizialmente negative e crescenti con bande che presentano una regione totalmente negativa per Atlantic e vicina a zero per Meditterean, le due curve presentano poi dei picchi positivi e un successivo calo seguito da una fase di stabilizzazione, il tutto con una differenza di fase, per frequenze medio alte le bande racchiudono sempre lo zero ad eccezione degli estremi relativi ad Atlantic.
-L'andamento più singolare è quello del coefficiente per Canary che presenta un intervallo iniziale in cui è positivo decrescente con relative bande sopra lo zero, per poi presentare un successivo picco sempre con bande di poco positive ed infine un'ultima fase con bande sotto lo zero. Il test F rifiuta l'ipotesi di uguaglianza dei coefficienti per frequenze sia basse che alte ad dovuti a Canary e probabilmente ad Atlantic. Il modello descrive, per i gabbiani delle Canarie, un impiego maggiore di frequenze basse e uno minore di frequenze alte rispetto ai gabbiani delle altre regioni.
+Nel caso dei falchi, per il coefficiente relativo al gruppo Centre non si evidenziano andamenti particolari e le bande racchiudono sempre lo zero; per i gruppi Atlantic e Mediterrean si hanno delle curve inizialmente negative e crescenti con bande che presentano una regione totalmente negativa per Atlantic e vicina a zero per Meditterean, le due curve presentano poi dei picchi positivi e un successivo calo seguito da una fase di stabilizzazione, il tutto con una differenza di fase, per frequenze medio alte le bande racchiudono sempre lo zero ad eccezione degli estremi relativi ad Atlantic. L'andamento più singolare è quello del coefficiente per Canary che presenta un intervallo iniziale in cui è positivo decrescente con relative bande sopra lo zero, per poi presentare un successivo picco sempre con bande di poco positive ed infine un'ultima fase con bande sotto lo zero. Il test F rifiuta l'ipotesi di uguaglianza dei coefficienti per frequenze sia basse che alte ad dovuti a Canary e probabilmente ad Atlantic. Il modello descrive, per i gabbiani delle Canarie, un impiego maggiore di frequenze basse e uno minore di frequenze alte rispetto ai gabbiani delle altre regioni.
 
 ## Conclusioni
 
+L'analisi degli spettogrammi medi delle diverse specie di uccelli tramite metodi funzionali ha presentato diverse problematiche legate alla tipologia dei dati quali l'impossibilità di impiegare il criterio GCV ed espressioni analitiche per gli errori standard dei coefficienti funzionali a causa della mancanza della stima analitica a causa del vincolo; i dati in questione sono inoltre caratterizzati da alta variabilità.
+
+Benchè l'analisi delle componenti principali funzionali non abbia evidenziato nessun cluster il modello di ANOVA funzionale ha evidenziato, per allocchi e gabbiani, delle regioni delle spettogramma con delle differenze significative tra alcuni dei gruppi scelti.
+
+
 ## Appendice
+
 ### Splines vincolate penalizzate
+
 Il programma di ottimizzazione quadratica nella sua forma più generale è definito come
 
 $$
 \text{min}_{b}(-d^\topb + 1/2b^\topDb) \text{ s.t. } A^\topb \geq b_0
-$${#eq-qp}
-Per una singola osservazione funzionale, per il lisciamento tramite scrittura in funzioni di base la funzione da minimizzare rispetto a $b$ è
+$$ {#eq-qp} Per una singola osservazione funzionale, per il lisciamento tramite scrittura in funzioni di base la funzione da minimizzare rispetto a $b$ è
 
 $$
 (y - \Phi b)^\top(y - \Phi b) + \lambda b^\top Pb
-$${#eq-basisloss}
-dove $y$ è il vettore dei punti osservati $\Phi$ è la matrice delle funzioni di base valutate nei punti osservati del dominio della curva e $b$ è il vettore dei coefficienti, $P$ è una generica matrice di penalità e $\lambda > 0$ indica l'entità della penalizzaione (per un criterio non penalizzato è sufficiente porre $\lambda = 0$).
-Minizzare l' @eq-basisloss equivale a minizzare 
+$$ {#eq-basisloss} dove $y$ è il vettore dei punti osservati $\Phi$ è la matrice delle funzioni di base valutate nei punti osservati del dominio della curva e $b$ è il vettore dei coefficienti, $P$ è una generica matrice di penalità e $\lambda > 0$ indica l'entità della penalizzaione (per un criterio non penalizzato è sufficiente porre $\lambda = 0$). Minizzare l' @eq-basisloss equivale a minizzare
 
 $$
 -y^\top \Phi b + b^\top \frac{1}{2}(\Phi^\top \Phi + \lambda P) b
-$${#eq-basislossexp}
+$$ {#eq-basislossexp}
 
-Da cui $d = y^\top \Phi$ e $D = \Phi^\top \Phi + \lambda P$.
-Usando la definizione di scrittura in basi il vincolo è $0 \leq \phi^\top(f)b \leq 1 \quad \forall f$, in pratica si discretizza $\phi(f_j)$ per $j = 1,..,J$.
-Sia $\Phi_J$ la matrice di funzioni di base valuate su griglia discretizzata: deve valere $\Phi_J b \leq \mathbb{1}$ o equivalentemente $-\Phi_J b \geq -\mathbb{1}$ dove con questa scrittura si intende che la disuguaglianza deve valere per ogni elemento dei vettori.
-Similmente, per vincolo di positività si ha $\Phi_J b \geq \mathbb{0}$, tuttavia, poichè per costruzione le basi bspline sono sempre non negative è sufficiente imporre $\mathbb{I}_J b \geq \mathbb{0}$ con $\mathbb{I}_J$ matrice identità. Combinando le due espressioni si ottiene 
+Da cui $d = y^\top \Phi$ e $D = \Phi^\top \Phi + \lambda P$. Usando la definizione di scrittura in basi il vincolo è $0 \leq \phi^\top(f)b \leq 1 \quad \forall f$, in pratica si discretizza $\phi(f_j)$ per $j = 1,..,J$. Sia $\Phi_J$ la matrice di funzioni di base valuate su griglia discretizzata: deve valere $\Phi_J b \leq \mathbb{1}$ o equivalentemente $-\Phi_J b \geq -\mathbb{1}$ dove con questa scrittura si intende che la disuguaglianza deve valere per ogni elemento dei vettori. Similmente, per vincolo di positività si ha $\Phi_J b \geq \mathbb{0}$, tuttavia, poichè per costruzione le basi bspline sono sempre non negative è sufficiente imporre $\mathbb{I}_J b \geq \mathbb{0}$ con $\mathbb{I}_J$ matrice identità. Combinando le due espressioni si ottiene
 
 $$ \begin{pmatrix}
 -\Phi\\
@@ -232,26 +207,4 @@ $$ \begin{pmatrix}
 \end{pmatrix}$$
 
 chiaramente $A = (-\Phi^\top \quad \mathbb{I}_j)$ e $b_0 = (-\mathbb{1} \quad \mathbb{0})^\top$, è dunque conclusa la scrittura del problema vincolato come programma quadratico.
-
-### A2: Grafici coefficienti funzionali
-
-\begin{figure}[H]
-\centering
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_falchi.png"}
-\end{minipage}
-\hfill
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_gufi.png"}
-\end{minipage}
-\vspace{0.5cm}
-\begin{minipage}{0.6\textwidth}
-  \centering
-  \includegraphics[width=\linewidth]{"../results/prima_parte/images/f_beta_gabbiani.png"}
-\end{minipage}
-\caption{Coefficienti del modelli di ANOVA funzionale, le bande intorno a ciascun coefficiente funzionale sono ottenute considerando il coefficiente funzionale aggiungendo e sottrendo due volte l'errore standard funzionale. In alto da sinistra verso destra i modelli per falchi e gufi, in basso per gabbiani.}
-\label{fig-fANOVA-beta-homosched}
-\end{figure}
 

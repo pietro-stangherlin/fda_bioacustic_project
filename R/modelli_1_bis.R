@@ -35,11 +35,11 @@ sourceCpp("src/bvar_kron.cpp")
 # WARNING: maybe change the input name
 load("data/data_1.RData")
 
-
+# DON'T LOAD if you want to run from the next line
 load("results/prima_parte/outputs/final_work_space.RData")
 
 # DON'T LOAD if you want to run from the next line
-load("results/prima_parte/outputs/basis_selection_work_space.RData")
+# load("results/prima_parte/outputs/basis_selection_work_space.RData")
 
 # subsample gufi due to computational issues
 gufi_ids_exclude = read.table("data/gufi_ids_exclude.txt",
@@ -1183,6 +1183,85 @@ PermutFANOVA = function(factor,
   
 }
 
+MyTperm <- function (x1fd, x2fd, nperm = 200, q = 0.05, argvals = NULL, 
+                     plotres = TRUE,
+                     my.bty = "n",
+                     my.position = "topright",
+                     my.main = "",
+                     ...) 
+{
+  if (!is.fd(x1fd) | !is.fd(x2fd)) {
+    stop("x1fd and x2fd must both be functional data objects")
+  }
+  rangeobs = x1fd$basis$range
+  rangehat = x2fd$basis$range
+  if (!prod(rangeobs == rangehat)) {
+    stop("x1fd and x2fd do not have the same range.")
+  }
+  if (is.null(argvals)) {
+    argvals = seq(rangeobs[1], rangeobs[2], length.out = 101)
+  }
+  q = 1 - q
+  x1mat = eval.fd(argvals, x1fd)
+  x2mat = eval.fd(argvals, x2fd)
+  n1 = ncol(x1mat)
+  n2 = ncol(x2mat)
+  Xmat = cbind(x1mat, x2mat)
+  Tnull = rep(0, nperm)
+  Tnullvals = matrix(0, length(argvals), nperm)
+  for (i in 1:nperm) {
+    tXmat = Xmat[, sample(n1 + n2)]
+    tmean1 = apply(tXmat[, 1:n1], 1, mean)
+    tmean2 = apply(tXmat[, n1 + (1:n2)], 1, mean)
+    tvar1 = apply(tXmat[, 1:n1], 1, var)/n1
+    tvar2 = apply(tXmat[, n1 + (1:n2)], 1, var)/n2
+    Tnullvals[, i] = abs(tmean1 - tmean2)/sqrt(tvar1 + tvar2)
+    Tnull[i] = max(Tnullvals[, i])
+  }
+  mean1 = apply(Xmat[, 1:n1], 1, mean)
+  mean2 = apply(Xmat[, n1 + (1:n2)], 1, mean)
+  var1 = apply(Xmat[, 1:n1], 1, var)/n1
+  var2 = apply(Xmat[, n1 + (1:n2)], 1, var)/n2
+  Tvals = abs(mean1 - mean2)/sqrt(var1 + var2)
+  Tobs = max(Tvals)
+  pval = mean(Tobs < Tnull)
+  qval = quantile(Tnull, q)
+  pvals.pts = apply(Tvals < Tnullvals, 1, mean)
+  qvals.pts = apply(Tnullvals, 1, quantile, q)
+  if (plotres) {
+    if (is.null(names(x1fd$fdnames)) | is.null(names(x2fd$fdnames))) {
+      xlab = "argvals"
+    }
+    else if (prod(names(x1fd$fdnames)[1] == names(x2fd$fdnames)[1])) {
+      xlab = names(x1fd$fdnames)[1]
+    }
+    else {
+      xlab = "argvals"
+    }
+    ylims = c(min(Tvals, qvals.pts), max(Tobs, qval))
+    plot(argvals, Tvals, type = "l", col = 2, ylim = ylims, 
+         lwd = 2, xlab = xlab, ylab = "t-statistic",
+         main = my.main, ...)
+    lines(argvals, qvals.pts, lty = 3, col = 4, lwd = 2)
+    abline(h = qval, lty = 2, col = 4, lwd = 2)
+    legendstr = c("Observed Statistic", paste("pointwise", 
+                                              1 - q, "critical value"), paste("maximum", 1 - q, 
+                                                                              "critical value"))
+    legend(my.position, ylims[2], legend = legendstr, col = c(2, 
+                                                             4, 4),
+           lty = c(1, 3, 2), lwd = c(2, 2, 2),
+           bty = my.bty)
+    
+    legend("bottomright", legend = paste0("Permutation Number: ",
+                                          nperm, collapse = ""),
+           bty = "n")
+  }
+  return(list(pval = pval, qval = qval, Tobs = Tobs, Tnull = Tnull, 
+              Tvals = Tvals, Tnullvals = Tnullvals, qvals.pts = qvals.pts, 
+              pvals.pts = pvals.pts, argvals = argvals))
+}
+
+tperm.fd()
 
 # >> Plotting Functions ---------------------------------
 FunctionalMeanBandPlot = function(fd_means,
@@ -2250,6 +2329,8 @@ PlotBetaWithQuantiles(original_fit = boot_fanova_beta_falchi$original_fit_beta,
                       my.layout.matr = cbind(matrix(1, 2, 2),
                                              matrix(2:5, 2, 2)))
 
+
+
 # ╭────╮
 # │Allocchi│ ----------------------------------------------------------
 # ╰────╯
@@ -2331,6 +2412,54 @@ PlotBetaWithQuantiles(original_fit = boot_fanova_beta_gufi$original_fit_beta,
                       my.layout.matr = cbind(matrix(1, 2, 2),
                                              matrix(2:5, 2, 2)))
 
+
+# t-test
+# Bonferroni correction
+
+alpha = 0.05
+l = length(unique(gufi$Climate_zone))
+n_test = factorial(l) / (factorial(l - 2) * factorial(2))
+
+alpha_correct_gufi =  round(alpha / n_test, 3)
+
+gufi_hot = gufi_meanspec_fd_con_diff
+gufi_hot$coefs = gufi_hot$coefs[,which(gufi$Climate_zone == "Hot")]
+
+gufi_cold = gufi_meanspec_fd_con_diff
+gufi_cold$coefs = gufi_cold$coefs[,which(gufi$Climate_zone == "Cold")]
+
+gufi_temperate = gufi_meanspec_fd_con_diff
+gufi_temperate$coefs = gufi_temperate$coefs[,which(gufi$Climate_zone == "Temperate")]
+
+
+png("results/prima_parte/images/t_test_gufi.png",
+    width = MY.WIDTH, height = MY.HEIGHT)
+
+par(mfrow = c(3, 1))
+
+tt_gufi_temperate_cold = MyTperm(gufi_cold, gufi_temperate,
+                                 nperm = N_PERM,
+                            my.bty = "n",
+                            q = alpha_correct_gufi,
+                            my.main = "Allocchi permutation t-test: Cold vs Temperate",
+                            my.position = "topright")
+
+tt_gufi_hot_cold = MyTperm(gufi_cold, gufi_hot,
+                           nperm = N_PERM,
+                            q = alpha_correct_gufi,
+                            my.bty = "n",
+                           my.main = "Allocchi permutation t-test: Cold vs Hot",
+                           my.position = "topright")
+
+tt_gufi_hot_temperate = MyTperm(gufi_temperate, gufi_hot,
+                                nperm = N_PERM,
+                            bty = "n",
+                            q = alpha_correct_gufi,
+                            my.bty = "n",
+                            my.main = "Allocchi permutation t-test: Temperate vs Hot",
+                            my.position = "topright")
+
+par(mfrow = c(1, 1))
 
 
 # ╭────────╮
@@ -2414,6 +2543,76 @@ PlotBetaWithQuantiles(original_fit = boot_fanova_beta_gabbiani$original_fit_beta
                       my.height = MY.HEIGHT,
                       my.layout.matr = cbind(matrix(1, 2, 2),
                                              matrix(2:5, 2, 2)))
+
+
+alpha = 0.05
+l = length(unique(gabbiani$Cluster))
+n_test = factorial(l) / (factorial(l - 2) * factorial(2))
+alpha_correct_gabbiani =  round(alpha / n_test, 3)
+
+gabbiani_Atlantic = gabbiani_meanspec_fd_con_diff
+gabbiani_Atlantic$coefs = gabbiani_Atlantic$coefs[,which(gabbiani$Cluster == "Atlantic")]
+
+gabbiani_Canary = gabbiani_meanspec_fd_con_diff
+gabbiani_Canary$coefs = gabbiani_Canary$coefs[,which(gabbiani$Cluster == "Canary")]
+
+gabbiani_Centre = gabbiani_meanspec_fd_con_diff
+gabbiani_Centre$coefs = gabbiani_Centre$coefs[,which(gabbiani$Cluster == "Centre")]
+
+gabbiani_Mediterrean = gabbiani_meanspec_fd_con_diff
+gabbiani_Mediterrean$coefs = gabbiani_Mediterrean$coefs[,which(gabbiani$Cluster == "Mediterrean")]
+
+png("results/prima_parte/images/t_test_gabbiani.png",
+    width = MY.WIDTH, height = MY.HEIGHT)
+
+par(mfrow = c(3, 2))
+
+tt_gabbiani_Atlantic_Canary = MyTperm(gabbiani_Atlantic, gabbiani_Canary,
+                                 nperm = N_PERM,
+                                 my.bty = "n",
+                                 q = alpha_correct_gabbiani,
+                                 my.main = "Gabbiani permutation t-test: Atlantic vs Canary",
+                                 my.position = "topright")
+
+tt_gabbiani_Atlantic_Centre = MyTperm(gabbiani_Atlantic, gabbiani_Centre,
+                           nperm = N_PERM,
+                           q = alpha_correct_gabbiani,
+                           my.bty = "n",
+                           my.main = "Gabbiani permutation t-test: Atlantic vs Centret",
+                           my.position = "topright")
+
+tt_gabbiani_Atlantic_Mediterrean = MyTperm(gabbiani_Atlantic, gabbiani_Mediterrean,
+                                nperm = N_PERM,
+                                bty = "n",
+                                q = alpha_correct_gabbiani,
+                                my.bty = "n",
+                                my.main = "Gabbiani permutation t-test: Atlantic vs Mediterrean",
+                                my.position = "topright")
+
+tt_gabbiani_Canary_Centre = MyTperm(gabbiani_Canary, gabbiani_Centre,
+                                      nperm = N_PERM,
+                                      my.bty = "n",
+                                      q = alpha_correct_gabbiani,
+                                      my.main = "Gabbiani permutation t-test: Canary vs Centre",
+                                      my.position = "topright")
+
+tt_gabbiani_Canary_Mediterrean = MyTperm(gabbiani_Canary, gabbiani_Mediterrean,
+                                      nperm = N_PERM,
+                                      q = alpha_correct_gabbiani,
+                                      my.bty = "n",
+                                      my.main = "Gabbiani permutation t-test: Canary vs Mediterrean",
+                                      my.position = "topright")
+
+tt_gabbiani_Centre_Mediterrean = MyTperm(gabbiani_Centre, gabbiani_Mediterrean,
+                                           nperm = N_PERM,
+                                           bty = "n",
+                                           q = alpha_correct_gabbiani,
+                                           my.bty = "n",
+                                           my.main = "Gabbiani permutation t-test: Centre vs Mediterrean",
+                                           my.position = "topright")
+
+par(mfrow = c(1, 1))
+
 
 # .. joint plot -----------------------------
 
