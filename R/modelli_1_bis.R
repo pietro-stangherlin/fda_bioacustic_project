@@ -1245,7 +1245,7 @@ MyTperm <- function (x1fd, x2fd, nperm = 200, q = 0.05, argvals = NULL,
     lines(argvals, qvals.pts, lty = 3, col = 4, lwd = 2)
     abline(h = qval, lty = 2, col = 4, lwd = 2)
     legendstr = c("Observed Statistic", paste("pointwise", 
-                                              1 - q, "critical value"), paste("maximum", 1 - q, 
+                                              round(1 - q, 3), "critical value"), paste("maximum",round(1 - q, 3), 
                                                                               "critical value"))
     legend(my.position, ylims[2], legend = legendstr, col = c(2, 
                                                              4, 4),
@@ -2461,6 +2461,7 @@ tt_gufi_hot_temperate = MyTperm(gufi_temperate, gufi_hot,
 
 par(mfrow = c(1, 1))
 
+dev.off()
 
 # ╭────────╮
 # │Gabbiani│ ------------------------------------------------------------------
@@ -2578,7 +2579,7 @@ tt_gabbiani_Atlantic_Centre = MyTperm(gabbiani_Atlantic, gabbiani_Centre,
                            nperm = N_PERM,
                            q = alpha_correct_gabbiani,
                            my.bty = "n",
-                           my.main = "Gabbiani permutation t-test: Atlantic vs Centret",
+                           my.main = "Gabbiani permutation t-test: Atlantic vs Centre",
                            my.position = "topright")
 
 tt_gabbiani_Atlantic_Mediterrean = MyTperm(gabbiani_Atlantic, gabbiani_Mediterrean,
@@ -2612,6 +2613,8 @@ tt_gabbiani_Centre_Mediterrean = MyTperm(gabbiani_Centre, gabbiani_Mediterrean,
                                            my.position = "topright")
 
 par(mfrow = c(1, 1))
+
+dev.off()
 
 
 # .. joint plot -----------------------------

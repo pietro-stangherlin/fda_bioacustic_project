@@ -167,7 +167,24 @@ Per saggiare l'ipotesi nulla di nullità di tutti i coefficienti associati ai gr
 
 Per i falchi i coefficienti relativi ai climi Temperate e Hot sono positivi e mostrano degli andamenti decrescenti (nella frequenza) con delle bande che comprendono lo zero per tutte le frequenze relativamente a Temperate, e lo incrociano in alcuni punti del dominio per Hot, quello relativo a Cold invece è sempre negativo crescente e le sue bande sono sempre sotto lo zero; ciò è in accordo con le analisi esplorative: le curve del gruppo Cold presentano ampiezze inferiori a quelle degli altri due gruppi e la differenza è più marcate per basse frequenze. Sembra quindi che climi freddi siano correlati con una minore presenza di versi a frequenze basse (rispetto alla media), tuttavia questa ipotetica differenza non trova riscontro nel test F che non rifiuta l'ipotesi nulla di uguaglianza dei coefficienti.
 
-Nei gufi, per frequenze medio-alte tute le bande relative ai coefficienti comprendono lo zero, poco sotto 1khz invece i gruppi Cold e Temperate presentano dei picchi negativi in dove le bande non includono lo zero (con maggiore evidenza per il gruppo Cold), il coefficiente per il gruppo Hot presenta invece un picco positivo in cui le bande non includono lo zero, questa differenza è evidenziata dal rifiuto del test F proprio in prossimità dei picchi. Secondo il modello dunque climi caldi sono correlati con una maggiore presenza di frequenze basse.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{"../results/prima_parte/images/t_test_gufi.png"}
+\caption{Grafici associati ai test t funzionali per l'uguaglianza delle medie a due a due per gli allocchi. L'alpha globale fissato è 0.05, da cui si ottiene l'alpha corretto ($\alpha_c$) (riportato nella legenda) impiegando la correzione di Bonferroni.
+La linea continua rappresenta la statistica osservata, quella a punti il percentile puntuale a $1 - \alpha_c$ della statistica t sotto l'ipotesi nulla stimato tramite permutazione (`r N_PERM` permutazioni)  e la linea punteggiata è il percentile al $1 - \alpha_c$ dei massimi delle statistiche t sotto l'ipotesi nulla.}
+\label{fig-t-test-gufi}
+\end{figure}
+
+Nei gufi, per frequenze medio-alte tutte le bande relative ai coefficienti comprendono lo zero, poco sotto 1khz invece i gruppi Cold e Temperate presentano dei picchi negativi in dove le bande non includono lo zero (con maggiore evidenza per il gruppo Cold), il coefficiente per il gruppo Hot presenta invece un picco positivo in cui le bande non includono lo zero, questa differenza è evidenziata dal rifiuto del test F proprio in prossimità dei picchi. Secondo il modello dunque climi caldi sono correlati con una maggiore presenza di frequenze basse.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{"../results/prima_parte/images/t_test_gabbiani.png"}
+\caption{Grafici associati ai test t funzionali per l'uguaglianza delle medie a due a due per i gabbiani. L'alpha globale fissato è 0.05, da cui si ottiene l'alpha corretto ($\alpha_c$) (riportato nella legenda) impiegando la correzione di Bonferroni.
+La linea continua rappresenta la statistica osservata, quella a punti il percentile puntuale a $1 - \alpha_c$ della statistica t sotto l'ipotesi nulla stimato tramite permutazione (`r N_PERM` permutazioni)  e la linea punteggiata è il percentile al $1 - \alpha_c$ dei massimi delle statistiche t sotto l'ipotesi nulla.}
+\label{fig-t-test-gufi}
+\end{figure}
 
 Nel caso dei falchi, per il coefficiente relativo al gruppo Centre non si evidenziano andamenti particolari e le bande racchiudono sempre lo zero; per i gruppi Atlantic e Mediterrean si hanno delle curve inizialmente negative e crescenti con bande che presentano una regione totalmente negativa per Atlantic e vicina a zero per Meditterean, le due curve presentano poi dei picchi positivi e un successivo calo seguito da una fase di stabilizzazione, il tutto con una differenza di fase, per frequenze medio alte le bande racchiudono sempre lo zero ad eccezione degli estremi relativi ad Atlantic. L'andamento più singolare è quello del coefficiente per Canary che presenta un intervallo iniziale in cui è positivo decrescente con relative bande sopra lo zero, per poi presentare un successivo picco sempre con bande di poco positive ed infine un'ultima fase con bande sotto lo zero. Il test F rifiuta l'ipotesi di uguaglianza dei coefficienti per frequenze sia basse che alte ad dovuti a Canary e probabilmente ad Atlantic. Il modello descrive, per i gabbiani delle Canarie, un impiego maggiore di frequenze basse e uno minore di frequenze alte rispetto ai gabbiani delle altre regioni.
 
