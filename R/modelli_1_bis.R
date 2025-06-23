@@ -1340,7 +1340,7 @@ PlotBetaWithQuantiles <- function(original_fit,
   
   
   if(!is.null(save_path)){
-    png(save_path,
+    pdf(save_path,
         width = my.width,
         height = my.height)
   }
@@ -1481,8 +1481,8 @@ DO_SAVE_RDATA = TRUE
 
 
 # save Plotting
-MY.WIDTH = 1300
-MY.HEIGHT = 1300
+MY.WIDTH = 8
+MY.HEIGHT = 8
 
 
 N_BOOT = 1000
@@ -1910,7 +1910,7 @@ save(representation_selection_df,
 # │Gheppi│------------------------------------
 # ╰──────╯
 
-png("results/prima_parte/images/falchi_fits_crit.png",
+pdf("results/prima_parte/images/falchi_fits_crit.pdf",
     width = MY.WIDTH, height = MY.HEIGHT)
 
 # compare fitting
@@ -1936,7 +1936,7 @@ dev.off()
 # │Allocchi│ ----------------------------------------------------------
 # ╰────╯
 
-png("results/prima_parte/images/gufi_fits_crit.png",
+pdf("results/prima_parte/images/gufi_fits_crit.pdf",
     width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(2, 2))
@@ -2124,7 +2124,7 @@ gabbiani_meanspec_fd_sd = lapply(
 # ..joint plot ---------------
 
 
-png("results/prima_parte/images/f_mean_sd.png",
+pdf("results/prima_parte/images/f_mean_sd.pdf",
      width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3,1))
@@ -2178,7 +2178,7 @@ gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 10)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 10)
 
 
-png("results/prima_parte/images/f_pca_explained_var.png",
+pdf("results/prima_parte/images/f_pca_explained_var.pdf",
      width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3, 1))
@@ -2200,7 +2200,7 @@ gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 3)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 3)
 
 
-png("results/prima_parte/images/f_pca_harmonics.png",
+pdf("results/prima_parte/images/f_pca_harmonics.pdf",
      width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3, 3), mar = rep(0, 4) + 1)
@@ -2217,7 +2217,7 @@ gufi_pcf = pca.fd(gufi_meanspec_fd, nharm = 2)
 gabbiani_pcf = pca.fd(gabbiani_meanspec_fd, nharm = 2)
 
 
-png("results/prima_parte/images/f_pca_scores.png",
+pdf("results/prima_parte/images/f_pca_scores.pdf",
      width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3, 1))
@@ -2308,22 +2308,22 @@ perm_fanova_res_falchi = PermutFANOVA(factor = falchi$Climate_zone,
 gc()
 
 
-fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
-                 my.betastderrlist = falchi_anova_model$beta_se$betastderrlist,
-                 my.factor = falchi$Climate_zone,
-                 my.name = "Gheppi",
-                 save_path = "results/prima_parte/images/f_beta_falchi.png",
-                 my.width = MY.WIDTH,
-                 my.height = MY.HEIGHT,
-                 my.layout.matr = cbind(matrix(1, 2, 2),
-                                        matrix(2:5, 2, 2)))
+# fANOVABetaSdPlot(my.betaestlist = falchi_anova_model$model$betaestlist,
+#                  my.betastderrlist = falchi_anova_model$beta_se$betastderrlist,
+#                  my.factor = falchi$Climate_zone,
+#                  my.name = "Gheppi",
+#                  save_path = "results/prima_parte/images/f_beta_falchi.png",
+#                  my.width = MY.WIDTH,
+#                  my.height = MY.HEIGHT,
+#                  my.layout.matr = cbind(matrix(1, 2, 2),
+#                                         matrix(2:5, 2, 2)))
 
 
 
 PlotBetaWithQuantiles(original_fit = boot_fanova_beta_falchi$original_fit_beta,
                       quantile_betas = boot_fanova_beta_falchi$quantile_betas,
                       my.name = "Gheppi",
-                      save_path = "results/prima_parte/images/f_beta_quant_falchi.png",
+                      save_path = "results/prima_parte/images/f_beta_quant_falchi.pdf",
                       my.width = MY.WIDTH,
                       my.height = MY.HEIGHT,
                       my.layout.matr = cbind(matrix(1, 2, 2),
@@ -2392,21 +2392,21 @@ perm_fanova_res_gufi = PermutFANOVA(factor = gufi$Climate_zone,
 gc()
 
 
-fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
-                 my.betastderrlist = gufi_anova_model$beta_se$betastderrlist,
-                 my.factor = gufi$Climate_zone,
-                 my.name = "Allocchi",
-                 save_path = "results/prima_parte/images/f_beta_gufi.png",
-                 my.width = MY.WIDTH,
-                 my.height = MY.HEIGHT,
-                 my.layout.matr = cbind(matrix(1, 2, 2),
-                                        matrix(2:5, 2, 2)))
+# fANOVABetaSdPlot(my.betaestlist = gufi_anova_model$model$betaestlist,
+#                  my.betastderrlist = gufi_anova_model$beta_se$betastderrlist,
+#                  my.factor = gufi$Climate_zone,
+#                  my.name = "Allocchi",
+#                  save_path = "results/prima_parte/images/f_beta_gufi.png",
+#                  my.width = MY.WIDTH,
+#                  my.height = MY.HEIGHT,
+#                  my.layout.matr = cbind(matrix(1, 2, 2),
+#                                         matrix(2:5, 2, 2)))
 
 
 PlotBetaWithQuantiles(original_fit = boot_fanova_beta_gufi$original_fit_beta,
                       quantile_betas = boot_fanova_beta_gufi$quantile_betas,
                       my.name = "Allocchi",
-                      save_path = "results/prima_parte/images/f_beta_quant_gufi.png",
+                      save_path = "results/prima_parte/images/f_beta_quant_gufi.pdf",
                       my.width = MY.WIDTH,
                       my.height = MY.HEIGHT,
                       my.layout.matr = cbind(matrix(1, 2, 2),
@@ -2432,7 +2432,7 @@ gufi_temperate = gufi_meanspec_fd_con_diff
 gufi_temperate$coefs = gufi_temperate$coefs[,which(gufi$Climate_zone == "Temperate")]
 
 
-png("results/prima_parte/images/t_test_gufi.png",
+pdf("results/prima_parte/images/t_test_gufi.pdf",
     width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3, 1))
@@ -2525,21 +2525,21 @@ perm_fanova_res_gabbiani = PermutFANOVA(factor = gabbiani$Cluster,
 gc()
 
 
-fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
-                 my.betastderrlist = gabbiani_anova_model$beta_se$betastderrlist,
-                 my.factor = gabbiani$Cluster,
-                 my.name = "gabbiani",
-                 save_path = "results/prima_parte/images/f_beta_gabbiani.png",
-                 my.width = MY.WIDTH,
-                 my.height = MY.HEIGHT,
-                 my.layout.matr = cbind(matrix(1, 2, 2),
-                                        matrix(2:5, 2, 2)))
+# fANOVABetaSdPlot(my.betaestlist = gabbiani_anova_model$model$betaestlist,
+#                  my.betastderrlist = gabbiani_anova_model$beta_se$betastderrlist,
+#                  my.factor = gabbiani$Cluster,
+#                  my.name = "gabbiani",
+#                  save_path = "results/prima_parte/images/f_beta_gabbiani.png",
+#                  my.width = MY.WIDTH,
+#                  my.height = MY.HEIGHT,
+#                  my.layout.matr = cbind(matrix(1, 2, 2),
+#                                         matrix(2:5, 2, 2)))
 
 
 PlotBetaWithQuantiles(original_fit = boot_fanova_beta_gabbiani$original_fit_beta,
                       quantile_betas = boot_fanova_beta_gabbiani$quantile_betas,
                       my.name = "Gabbiani",
-                      save_path = "results/prima_parte/images/f_beta_quant_gabbiani.png",
+                      save_path = "results/prima_parte/images/f_beta_quant_gabbiani.pdf",
                       my.width = MY.WIDTH,
                       my.height = MY.HEIGHT,
                       my.layout.matr = cbind(matrix(1, 2, 2),
@@ -2563,7 +2563,7 @@ gabbiani_Centre$coefs = gabbiani_Centre$coefs[,which(gabbiani$Cluster == "Centre
 gabbiani_Mediterrean = gabbiani_meanspec_fd_con_diff
 gabbiani_Mediterrean$coefs = gabbiani_Mediterrean$coefs[,which(gabbiani$Cluster == "Mediterrean")]
 
-png("results/prima_parte/images/t_test_gabbiani.png",
+pdf("results/prima_parte/images/t_test_gabbiani.pdf",
     width = MY.WIDTH, height = MY.HEIGHT)
 
 par(mfrow = c(3, 2))
